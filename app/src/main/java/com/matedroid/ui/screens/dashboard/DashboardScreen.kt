@@ -244,7 +244,7 @@ fun DashboardScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = uiState.selectedCarName ?: "MateDroid",
+                        text = "TESMANO",
                         modifier = if (BuildConfig.DEBUG) {
                             Modifier.combinedClickable(
                                 onClick = {},
@@ -337,7 +337,7 @@ fun DashboardScreen(
         ) {
             when {
                 uiState.isLoading -> {
-                    LoadingContent()
+                    TesManoHomeLoadingContent()
                 }
                 uiState.carStatus != null -> {
                     DashboardContent(
@@ -359,6 +359,7 @@ fun DashboardScreen(
                         isCurrentChargeAvailable = uiState.isCurrentChargeAvailable,
                         sentryEventCount = uiState.sentryEventCount,
                         dcFinishedPluggedIn = uiState.dcFinishedPluggedIn,
+                        isRefreshing = uiState.isRefreshing,
                         onNavigateToCharges = {
                             uiState.selectedCarId?.let { carId ->
                                 onNavigateToCharges(carId, uiState.selectedCarExterior?.exteriorColor)
@@ -414,10 +415,9 @@ fun DashboardScreen(
                     // errored — e.g. a car no longer in the account). Keep the selector
                     // reachable so the user can switch to a working car instead of being
                     // stuck on a dead-end loading/error screen (issue #272).
-                    CarUnavailableContent(
+                    TesManoCarUnavailableContent(
                         cars = uiState.cars,
                         selectedCarId = uiState.selectedCarId,
-                        carImageOverrides = uiState.carImageOverrides,
                         error = uiState.error,
                         onSelectCar = { viewModel.selectCar(it) },
                         onRetry = { viewModel.retryCarStatus() }
@@ -425,13 +425,10 @@ fun DashboardScreen(
                 }
                 uiState.error != null -> {
                     // The car list itself failed to load — full-screen error.
-                    ErrorContent(
-                        message = uiState.error!!,
-                        details = uiState.errorDetails
-                    )
+                    TesManoHomeErrorContent(message = uiState.error!!)
                 }
                 else -> {
-                    EmptyContent()
+                    TesManoHomeEmptyContent()
                 }
             }
         }
@@ -832,6 +829,7 @@ private fun DashboardContent(
     isCurrentChargeAvailable: Boolean = false,
     sentryEventCount: Int = 0,
     dcFinishedPluggedIn: Boolean = false,
+    isRefreshing: Boolean = false,
     onNavigateToCharges: () -> Unit = {},
     onNavigateToDrives: () -> Unit = {},
     onNavigateToBattery: () -> Unit = {},
@@ -843,96 +841,24 @@ private fun DashboardContent(
     onNavigateToSentryHistory: () -> Unit = {},
     onNavigateToTrips: () -> Unit = {}
 ) {
-    val isDarkTheme = isSystemInDarkTheme()
-    val palette = CarColorPalettes.forExteriorColor(carExterior?.exteriorColor, isDarkTheme)
-
-    // State for showing the car image picker dialog
-    var showCarImagePicker by remember { mutableStateOf(false) }
-
-    // Car image picker dialog
-    if (showCarImagePicker) {
-        CarImagePickerDialog(
-            model = carModel,
-            exteriorColor = carExterior?.exteriorColor,
-            wheelType = carExterior?.wheelType,
-            trimBadging = carTrimBadging,
-            currentOverride = imageOverride,
-            onDismiss = { showCarImagePicker = false },
-            onConfirm = { override ->
-                onSaveCarImageOverride(override)
-            },
-            onReset = {
-                onSaveCarImageOverride(null)
-            }
-        )
-    }
-
-    // Scrollable content
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Battery Section with Car Image (tappable for battery health)
-        BatteryCard(
-            status = status,
-            units = units,
-            carModel = carModel,
-            carTrimBadging = carTrimBadging,
-            carExterior = carExterior,
-            imageOverride = imageOverride,
-            cars = cars,
-            selectedCarId = selectedCarId,
-            onSelectCar = onSelectCar,
-            carImageOverrides = carImageOverrides,
-            isCurrentChargeAvailable = isCurrentChargeAvailable,
-            sentryEventCount = sentryEventCount,
-            onNavigateToBattery = onNavigateToBattery,
-            onNavigateToStats = onNavigateToStats,
-            onNavigateToCurrentCharge = onNavigateToCurrentCharge,
-            onCarImageLongPress = { showCarImagePicker = true },
-            onNavigateToSentryHistory = onNavigateToSentryHistory
-        )
-
-        // DC charge finished but still plugged in warning
-        if (dcFinishedPluggedIn) {
-            DcUnplugWarningBanner(dcFinishedSince = status.stateSince)
-        }
-
-        // Location Section - show if we have coordinates
-        if (status.latitude != null && status.longitude != null) {
-            LocationCard(
-                status = status,
-                units = units,
-                resolvedAddress = resolvedAddress,
-                palette = palette
-            )
-        }
-
-        // Activity card — Trips hero + counters bento
-        VehicleInfoCard(
-            status = status,
-            units = units,
-            palette = palette,
-            totalCharges = totalCharges,
-            totalDrives = totalDrives,
-            totalTrips = totalTrips,
-            latestTrip = latestTrip,
-            onNavigateToCharges = onNavigateToCharges,
-            onNavigateToDrives = onNavigateToDrives,
-            onNavigateToMileage = onNavigateToMileage,
-            onNavigateToUpdates = onNavigateToUpdates,
-            onNavigateToTrips = onNavigateToTrips
-        )
-
-        // Tyre pressure — its own card, shown when TPMS data is available
-        val tpms = status.tpmsDetails
-        if (tpms != null && (tpms.pressureFl != null || tpms.pressureFr != null)) {
-            TirePressureCard(tpms = tpms, units = units, palette = palette)
-        }
-    }
+    TesManoHomeDashboard(
+        status = status,
+        units = units,
+        carName = status.displayName,
+        carModel = carModel,
+        carTrimBadging = carTrimBadging,
+        carExterior = carExterior,
+        imageOverride = imageOverride,
+        totalCharges = totalCharges,
+        totalDrives = totalDrives,
+        latestTrip = latestTrip,
+        isRefreshing = isRefreshing,
+        onNavigateToBattery = onNavigateToBattery,
+        onNavigateToCharges = onNavigateToCharges,
+        onNavigateToDrives = onNavigateToDrives,
+        onNavigateToTrips = onNavigateToTrips,
+        onNavigateToMileage = onNavigateToMileage
+    )
 }
 
 // createGlowBitmap moved to GlowBitmapRenderer for reuse by the home screen widget
