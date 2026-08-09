@@ -1,4 +1,33 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.gradle.api.DefaultTask
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.TaskAction
+import java.io.File
+
+abstract class VerifyReleaseSigning : DefaultTask() {
+    @get:Input abstract val keystorePath: Property<String>
+    @get:Input abstract val storePassword: Property<String>
+    @get:Input abstract val keyAlias: Property<String>
+    @get:Input abstract val keyPassword: Property<String>
+
+    @TaskAction
+    fun verify() {
+        val required = mapOf(
+            "RELEASE_KEYSTORE_PATH" to keystorePath.get(),
+            "KEYSTORE_PASSWORD" to storePassword.get(),
+            "KEY_ALIAS" to keyAlias.get(),
+            "KEY_PASSWORD" to keyPassword.get()
+        )
+        val missing = required.filterValues { it.isBlank() }.keys
+        check(missing.isEmpty()) {
+            "Release signing is not configured. Set ${required.keys.joinToString()} for a non-debug release key."
+        }
+        check(File(keystorePath.get()).isFile) {
+            "Release signing keystore was not found at RELEASE_KEYSTORE_PATH."
+        }
+    }
+}
 
 plugins {
     alias(libs.plugins.android.application)
@@ -42,15 +71,13 @@ android {
 
     signingConfigs {
         create("release") {
-            // CI: use secrets from environment variables (if non-empty)
-            // Local/CI without secrets: fall back to debug keystore
-            val keystoreBase64 = System.getenv("KEYSTORE_BASE64")?.takeIf { it.isNotEmpty() }
-            val keystorePath = if (keystoreBase64 != null) "release.keystore"
-                else "${System.getProperty("user.home")}/.android/debug.keystore"
-            storeFile = file(keystorePath)
-            storePassword = System.getenv("KEYSTORE_PASSWORD")?.takeIf { it.isNotEmpty() } ?: "android"
-            keyAlias = System.getenv("KEY_ALIAS")?.takeIf { it.isNotEmpty() } ?: "androiddebugkey"
-            keyPassword = System.getenv("KEY_PASSWORD")?.takeIf { it.isNotEmpty() } ?: "android"
+            val releaseKeystorePath = System.getenv("RELEASE_KEYSTORE_PATH")
+            if (!releaseKeystorePath.isNullOrBlank()) {
+                storeFile = file(releaseKeystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
         }
     }
 
@@ -113,6 +140,22 @@ android {
             it.jvmArgs("-Xmx1024m")
         }
     }
+}
+
+val releaseKeystorePath = providers.environmentVariable("RELEASE_KEYSTORE_PATH")
+val releaseStorePassword = providers.environmentVariable("KEYSTORE_PASSWORD")
+val releaseKeyAlias = providers.environmentVariable("KEY_ALIAS")
+val releaseKeyPassword = providers.environmentVariable("KEY_PASSWORD")
+
+val verifyReleaseSigning by tasks.registering(VerifyReleaseSigning::class) {
+    keystorePath.set(releaseKeystorePath.orElse(""))
+    storePassword.set(releaseStorePassword.orElse(""))
+    keyAlias.set(releaseKeyAlias.orElse(""))
+    keyPassword.set(releaseKeyPassword.orElse(""))
+}
+
+tasks.configureEach {
+    if (name == "preReleaseBuild") dependsOn(verifyReleaseSigning)
 }
 
 dependencies {

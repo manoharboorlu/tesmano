@@ -47,6 +47,7 @@ class SyncRepository @Inject constructor(
         private const val TAG = "SyncRepository"
         private const val THROTTLE_DELAY_MS = 10L  // Reduced from 100ms
         private const val BATCH_SIZE = 10  // Number of concurrent API calls
+        private const val SUMMARY_PAGE_SIZE = 250
     }
 
     private fun log(message: String) = logCollector.log(TAG, message)
@@ -79,8 +80,7 @@ class SyncRepository @Inject constructor(
 
     /**
      * Sync all data for a car.
-     * Phase 1: Sync summaries (fast, 2 API calls)
-     * Phase 2: Sync details (slow, 1 API call per drive/charge)
+     * Sync summary history only. Deep detail payloads remain on-demand work.
      */
     suspend fun syncCar(carId: Int): Boolean {
         log("Starting sync for car $carId")
@@ -95,70 +95,75 @@ class SyncRepository @Inject constructor(
         }
 
         syncManager.markSummariesComplete(carId)
-
-        // Check if details need syncing
-        if (syncManager.areDetailsSynced(carId)) {
-            log("Details already synced for car $carId")
-            return true
-        }
-
-        // Phase 2: Sync drive details
-        val driveSuccess = syncDriveDetails(carId)
-        if (!driveSuccess) {
-            syncManager.markSyncError(carId, "Failed to sync drive details")
-            return false
-        }
-
-        syncManager.markDriveDetailsComplete(carId)
-
-        // Phase 3: Sync charge details
-        val chargeSuccess = syncChargeDetails(carId)
-        if (!chargeSuccess) {
-            syncManager.markSyncError(carId, "Failed to sync charge details")
-            return false
-        }
-
-        // Re-enqueue any locations that need geocoding (in case queue was cleared)
-        reEnqueueLocationsForGeocoding(carId)
-
-        syncManager.markSyncComplete(carId)
-        log("Sync complete for car $carId")
+        log("Summary sync complete for car $carId; deep details remain on demand")
         return true
     }
 
     /**
-     * Sync only summaries (Quick Stats).
-     * Fast operation - 2 API calls regardless of data size.
+     * Sync summaries using TeslaMateApi's supported page/show parameters. Initial
+     * history is fully traversed; later syncs use the inclusive stored high-water
+     * date and therefore only page the recent delta.
      */
     suspend fun syncSummaries(carId: Int): Boolean {
         log("Syncing summaries for car $carId")
-
-        // Fetch and store drives
-        when (val drivesResult = teslamateRepository.getDrives(carId)) {
-            is ApiResult.Success -> {
-                val summaries = drivesResult.data.map { it.toDriveSummary(carId) }
-                driveSummaryDao.upsertAll(summaries)
-                log("Synced ${summaries.size} drives for car $carId")
+        var state = syncManager.getOrCreateSyncState(carId)
+        val initial = !state.summariesSynced || state.summarySyncInProgress
+        if (!state.summarySyncInProgress) {
+            syncManager.updateSummaryCheckpoint(carId) {
+                it.copy(summarySyncInProgress = true, driveSummaryComplete = false, chargeSummaryComplete = false,
+                    nextDriveSummaryPage = 1, nextChargeSummaryPage = 1)
             }
-            is ApiResult.Error -> {
-                logError("Failed to fetch drives: ${drivesResult.message}")
+            state = syncManager.getOrCreateSyncState(carId)
+        }
+        val driveStartDate = if (initial) null else state.lastDriveStartDate.ifBlank { null }
+        val chargeStartDate = if (initial) null else state.lastChargeStartDate.ifBlank { null }
+
+        if (!state.driveSummaryComplete) {
+            val driveResult = syncHistoryPages(
+                startPage = state.nextDriveSummaryPage,
+                pageSize = SUMMARY_PAGE_SIZE,
+                fetch = { page, show -> teslamateRepository.getDrives(carId, startDate = driveStartDate, page = page, show = show).toPageFetch() },
+                idOf = { it.driveId },
+                store = { page -> driveSummaryDao.upsertAll(page.map { it.toDriveSummary(carId) }) },
+                checkpoint = { next -> syncManager.updateSummaryCheckpoint(carId) { it.copy(nextDriveSummaryPage = next) } },
+                progress = { page, count -> syncManager.updateSummaryPageProgress(carId, "drives", page, count) }
+            )
+            if (driveResult is HistoryPageResult.Failed) {
+                logError("Drive history page ${driveResult.nextPage} failed: ${driveResult.reason}")
+                return false
+            }
+            syncManager.updateSummaryCheckpoint(carId) { it.copy(driveSummaryComplete = true, nextDriveSummaryPage = 1) }
+            state = syncManager.getOrCreateSyncState(carId)
+        }
+
+        if (!state.chargeSummaryComplete) {
+            val chargeResult = syncHistoryPages(
+                startPage = state.nextChargeSummaryPage,
+                pageSize = SUMMARY_PAGE_SIZE,
+                fetch = { page, show -> teslamateRepository.getCharges(carId, startDate = chargeStartDate, page = page, show = show).toPageFetch() },
+                idOf = { it.chargeId },
+                store = { page -> chargeSummaryDao.upsertAll(page.map { it.toChargeSummary(carId) }) },
+                checkpoint = { next -> syncManager.updateSummaryCheckpoint(carId) { it.copy(nextChargeSummaryPage = next) } },
+                progress = { page, count -> syncManager.updateSummaryPageProgress(carId, "charges", page, count) }
+            )
+            if (chargeResult is HistoryPageResult.Failed) {
+                logError("Charge history page ${chargeResult.nextPage} failed: ${chargeResult.reason}")
                 return false
             }
         }
 
-        // Fetch and store charges
-        when (val chargesResult = teslamateRepository.getCharges(carId)) {
-            is ApiResult.Success -> {
-                val summaries = chargesResult.data.map { it.toChargeSummary(carId) }
-                chargeSummaryDao.upsertAll(summaries)
-                log("Synced ${summaries.size} charges for car $carId")
-            }
-            is ApiResult.Error -> {
-                logError("Failed to fetch charges: ${chargesResult.message}")
-                return false
-            }
+        val (latestDriveStartDate, latestChargeStartDate) = syncManager.latestSummaryDates(carId)
+        syncManager.updateSummaryCheckpoint(carId) {
+            it.copy(
+                lastDriveStartDate = latestDriveStartDate,
+                lastChargeStartDate = latestChargeStartDate,
+                nextDriveSummaryPage = 1,
+                nextChargeSummaryPage = 1,
+                driveSummaryComplete = false,
+                chargeSummaryComplete = false,
+                summarySyncInProgress = false
+            )
         }
-
         return true
     }
 
@@ -616,4 +621,9 @@ private fun ChargeData.toChargeSummary(carId: Int): ChargeSummary {
         outsideTempAvg = outsideTempAvg,
         odometer = odometer ?: 0.0
     )
+}
+
+private fun <T> ApiResult<List<T>>.toPageFetch(): PageFetch<T> = when (this) {
+    is ApiResult.Success -> PageFetch.Success(data)
+    is ApiResult.Error -> PageFetch.Error(message)
 }

@@ -25,6 +25,12 @@ interface SyncStateDao {
     """)
     suspend fun markSummariesSynced(carId: Int, timestamp: Long)
 
+    @Query("SELECT MAX(startDate) FROM drives_summary WHERE carId = :carId")
+    suspend fun latestDriveStartDate(carId: Int): String?
+
+    @Query("SELECT MAX(startDate) FROM charges_summary WHERE carId = :carId")
+    suspend fun latestChargeStartDate(carId: Int): String?
+
     // Detail sync progress updates
     @Query("""
         UPDATE sync_state
@@ -56,7 +62,14 @@ interface SyncStateDao {
             drivesProcessed = 0,
             chargesProcessed = 0,
             totalDrivesToProcess = 0,
-            totalChargesToProcess = 0
+            totalChargesToProcess = 0,
+            lastDriveStartDate = '',
+            lastChargeStartDate = '',
+            nextDriveSummaryPage = 1,
+            nextChargeSummaryPage = 1,
+            driveSummaryComplete = 0,
+            chargeSummaryComplete = 0,
+            summarySyncInProgress = 0
         WHERE carId = :carId
     """)
     suspend fun resetForResync(carId: Int)

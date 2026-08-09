@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.first
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import java.security.SecureRandom
@@ -141,8 +142,12 @@ class TeslamateApiFactory(
      */
     suspend fun create(baseUrl: String, acceptInvalidCerts: Boolean? = null): TeslamateApi {
         val normalizedUrl = baseUrl.trimEnd('/') + "/"
+        require(BuildConfig.DEBUG || normalizedUrl.toHttpUrl().isHttps) {
+            "Release builds require an HTTPS TeslaMateApi URL"
+        }
+        settingsDataStore.migrateLegacySecretsIfNeeded()
         val settings = settingsDataStore.settings.first()
-        val useInsecure = acceptInvalidCerts ?: settings.acceptInvalidCerts
+        val useInsecure = BuildConfig.DEBUG && (acceptInvalidCerts ?: settings.acceptInvalidCerts)
         val apiToken = settings.apiToken
         val basicAuthUsername = settings.httpBasicAuthUsername
         val basicAuthPassword = settings.httpBasicAuthPassword
@@ -215,7 +220,7 @@ class TeslamateApiFactory(
             builder.addInterceptor(loggingInterceptor)
         }
 
-        if (acceptInvalidCerts) {
+        if (BuildConfig.DEBUG && acceptInvalidCerts) {
             configureInsecureTls(builder)
         }
 

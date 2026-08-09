@@ -67,42 +67,27 @@ class SyncManager @Inject constructor(
         updateProgress(carId, SyncPhase.SYNCING_SUMMARIES, 0, 1, message)
     }
 
-    /**
-     * Mark summaries as synced and calculate total items to process.
-     */
+    /** Mark summaries as synced. Deep telemetry is deliberately fetched on demand. */
     suspend fun markSummariesComplete(carId: Int) {
         syncStateDao.markSummariesSynced(carId, System.currentTimeMillis())
+        updateProgress(carId, SyncPhase.COMPLETE, 1, 1)
+        updateOverallStatus()
+    }
 
-        // Calculate total items to process for detail sync
-        val unprocessedDrives = driveSummaryDao.countUnprocessedDrives(carId, SchemaVersion.CURRENT)
-        val unprocessedCharges = chargeSummaryDao.countUnprocessedCharges(carId, SchemaVersion.CURRENT)
+    suspend fun updateSummaryCheckpoint(
+        carId: Int,
+        transform: (SyncState) -> SyncState
+    ) {
+        val state = getOrCreateSyncState(carId)
+        syncStateDao.upsert(transform(state))
+    }
 
-        val state = syncStateDao.get(carId)
-        val hasItemsToProcess = unprocessedDrives > 0 || unprocessedCharges > 0
-        if (state != null) {
-            syncStateDao.upsert(
-                state.copy(
-                    totalDrivesToProcess = unprocessedDrives,
-                    totalChargesToProcess = unprocessedCharges,
-                    drivesProcessed = 0,
-                    chargesProcessed = 0,
-                    // Reset detailsSynced if there are items to process (e.g., schema change)
-                    detailsSynced = if (hasItemsToProcess) false else state.detailsSynced
-                )
-            )
-        }
+    suspend fun latestSummaryDates(carId: Int): Pair<String, String> =
+        syncStateDao.latestDriveStartDate(carId).orEmpty() to
+            syncStateDao.latestChargeStartDate(carId).orEmpty()
 
-        // If nothing to process, mark as complete
-        if (!hasItemsToProcess) {
-            markSyncComplete(carId)
-        } else {
-            updateProgress(
-                carId,
-                SyncPhase.SYNCING_DRIVE_DETAILS,
-                0,
-                unprocessedDrives + unprocessedCharges
-            )
-        }
+    fun updateSummaryPageProgress(carId: Int, kind: String, page: Int, count: Int) {
+        updateProgress(carId, SyncPhase.SYNCING_SUMMARIES, page, 0, "Fetched $count $kind on page $page")
     }
 
     /**

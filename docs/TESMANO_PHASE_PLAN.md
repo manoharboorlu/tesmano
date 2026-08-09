@@ -30,6 +30,12 @@ The requested phase sequence is retained, with one safety adjustment: Phase 1 es
 - Define a window/posture state abstraction and adaptive navigation contract without redesigning screens yet.
 - Establish HTTPS/release, keystore-backed credential and signing-fail-closed foundations.
 
+### Phase 1B completion note
+
+- Completed: paged/resumable summary sync with a 250-record page size, delta high-water marks, no eager detail sweep, explicit cache ownership, Room 12→13 migration without destructive fallback, Keystore AES-GCM secret storage, release HTTPS/TLS fail-closed behavior, and release-signing checks.
+- Deferred: the canonical timestamp migration remains documented in `TIME_MODEL.md`; sync stores the server's raw RFC 3339 high-water string only to use the existing API `startDate` filter and does not alter timestamp/domain semantics.
+- Deferred: deletion reconciliation, Room-backed UI paging, and user-facing cache controls remain later performance/UI work.
+
 ### Exit gate
 
 - New York winter/summer/DST/midnight tests pass end to end.

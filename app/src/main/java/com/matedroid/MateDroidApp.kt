@@ -85,7 +85,7 @@ class MateDroidApp : Application(), Configuration.Provider {
 
         WorkManager.getInstance(this).enqueueUniqueWork(
             DataSyncWorker.WORK_NAME,
-            ExistingWorkPolicy.REPLACE,  // Replace stuck/waiting work with fresh start
+            ExistingWorkPolicy.KEEP,  // Resume persisted summary checkpoints instead of replacing active work
             syncRequest
         )
 

@@ -11,6 +11,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -70,8 +71,11 @@ class SettingsDataStore @Inject constructor(
     private val serverUrlKey = stringPreferencesKey("server_url")
     private val secondaryServerUrlKey = stringPreferencesKey("secondary_server_url")
     private val apiTokenKey = stringPreferencesKey("api_token")
+    private val encryptedApiTokenKey = stringPreferencesKey("encrypted_api_token")
     private val httpBasicAuthUsernameKey = stringPreferencesKey("http_basic_auth_username")
     private val httpBasicAuthPasswordKey = stringPreferencesKey("http_basic_auth_password")
+    private val encryptedHttpBasicAuthPasswordKey = stringPreferencesKey("encrypted_http_basic_auth_password")
+    private val credentialCipher: CredentialCipher = AndroidKeystoreCredentialCipher()
     private val acceptInvalidCertsKey = booleanPreferencesKey("accept_invalid_certs")
     private val currencyCodeKey = stringPreferencesKey("currency_code")
     private val showShortDrivesChargesKey = booleanPreferencesKey("show_short_drives_charges")
@@ -88,15 +92,38 @@ class SettingsDataStore @Inject constructor(
         AppSettings(
             serverUrl = preferences[serverUrlKey] ?: "",
             secondaryServerUrl = preferences[secondaryServerUrlKey] ?: "",
-            apiToken = preferences[apiTokenKey] ?: "",
+            apiToken = decryptOrLegacy(preferences[encryptedApiTokenKey], preferences[apiTokenKey]),
             httpBasicAuthUsername = preferences[httpBasicAuthUsernameKey] ?: "",
-            httpBasicAuthPassword = preferences[httpBasicAuthPasswordKey] ?: "",
+            httpBasicAuthPassword = decryptOrLegacy(preferences[encryptedHttpBasicAuthPasswordKey], preferences[httpBasicAuthPasswordKey]),
             acceptInvalidCerts = preferences[acceptInvalidCertsKey] ?: false,
             currencyCode = preferences[currencyCodeKey] ?: "EUR",
             showShortDrivesCharges = preferences[showShortDrivesChargesKey] ?: false,
             teslamateBaseUrl = preferences[teslamateBaseUrlKey] ?: "",
             lastSelectedCarId = preferences[lastSelectedCarIdKey]
         )
+    }
+
+    private fun decryptOrLegacy(encrypted: String?, legacy: String?): String = try {
+        encrypted?.let(credentialCipher::decrypt) ?: legacy.orEmpty()
+    } catch (_: Exception) {
+        // Keep the legacy value available; never erase a credential after a failed decrypt.
+        legacy.orEmpty()
+    }
+
+    /** One-time, failure-safe migration of prior plaintext secret preferences. */
+    suspend fun migrateLegacySecretsIfNeeded() {
+        val current = context.dataStore.data.first()
+        val legacyToken = current[apiTokenKey]
+        val legacyPassword = current[httpBasicAuthPasswordKey]
+        if (legacyToken.isNullOrBlank() && legacyPassword.isNullOrBlank()) return
+        val encryptedToken = legacyToken?.takeIf { it.isNotBlank() }?.let(credentialCipher::encrypt)
+        val encryptedPassword = legacyPassword?.takeIf { it.isNotBlank() }?.let(credentialCipher::encrypt)
+        context.dataStore.edit { preferences ->
+            if (encryptedToken != null) preferences[encryptedApiTokenKey] = encryptedToken
+            if (encryptedPassword != null) preferences[encryptedHttpBasicAuthPasswordKey] = encryptedPassword
+            if (encryptedToken != null) preferences.remove(apiTokenKey)
+            if (encryptedPassword != null) preferences.remove(httpBasicAuthPasswordKey)
+        }
     }
 
     val showShortDrivesCharges: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -152,21 +179,27 @@ class SettingsDataStore @Inject constructor(
         acceptInvalidCerts: Boolean,
         currencyCode: String
     ) {
+        val encryptedToken = apiToken.takeIf { it.isNotBlank() }?.let(credentialCipher::encrypt)
+        val encryptedPassword = httpBasicAuthPassword.takeIf { it.isNotBlank() }?.let(credentialCipher::encrypt)
         context.dataStore.edit { preferences ->
             preferences[serverUrlKey] = serverUrl
             preferences[secondaryServerUrlKey] = secondaryServerUrl
-            preferences[apiTokenKey] = apiToken
+            if (encryptedToken == null) preferences.remove(encryptedApiTokenKey) else preferences[encryptedApiTokenKey] = encryptedToken
+            preferences.remove(apiTokenKey)
             preferences[httpBasicAuthUsernameKey] = httpBasicAuthUsername
-            preferences[httpBasicAuthPasswordKey] = httpBasicAuthPassword
+            if (encryptedPassword == null) preferences.remove(encryptedHttpBasicAuthPasswordKey) else preferences[encryptedHttpBasicAuthPasswordKey] = encryptedPassword
+            preferences.remove(httpBasicAuthPasswordKey)
             preferences[acceptInvalidCertsKey] = acceptInvalidCerts
             preferences[currencyCodeKey] = currencyCode
         }
     }
 
     suspend fun saveHttpBasicAuth(username: String, password: String) {
+        val encryptedPassword = password.takeIf { it.isNotBlank() }?.let(credentialCipher::encrypt)
         context.dataStore.edit { preferences ->
             preferences[httpBasicAuthUsernameKey] = username
-            preferences[httpBasicAuthPasswordKey] = password
+            if (encryptedPassword == null) preferences.remove(encryptedHttpBasicAuthPasswordKey) else preferences[encryptedHttpBasicAuthPasswordKey] = encryptedPassword
+            preferences.remove(httpBasicAuthPasswordKey)
         }
     }
 

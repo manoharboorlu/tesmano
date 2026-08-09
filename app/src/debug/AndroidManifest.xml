@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
-    <application>
-        <!-- Switch API endpoint via ADB broadcast (debug builds only) -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Debug-only local/TeslaMate development support. Release inherits false. -->
+    <application
+        android:usesCleartextTraffic="true"
+        tools:replace="android:usesCleartextTraffic">
+        <!-- Switch API endpoint via ADB broadcast (debug builds only). -->
         <receiver
             android:name=".receiver.DebugEndpointReceiver"
             android:exported="true">
@@ -11,5 +14,4 @@
             </intent-filter>
         </receiver>
     </application>
-
 </manifest>

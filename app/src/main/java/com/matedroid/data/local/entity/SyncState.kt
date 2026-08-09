@@ -15,6 +15,13 @@ data class SyncState(
     // Summary sync tracking (list endpoints)
     val lastDriveSyncAt: Long = 0,
     val lastChargeSyncAt: Long = 0,
+    val lastDriveStartDate: String = "",
+    val lastChargeStartDate: String = "",
+    val nextDriveSummaryPage: Int = 1,
+    val nextChargeSummaryPage: Int = 1,
+    val driveSummaryComplete: Boolean = false,
+    val chargeSummaryComplete: Boolean = false,
+    val summarySyncInProgress: Boolean = false,
 
     // Detail sync tracking (individual endpoints)
     val lastDriveDetailId: Int = 0,
