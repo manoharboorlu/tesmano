@@ -32,6 +32,7 @@
 - Samsung Galaxy Z Fold 8 Ultra is the primary real-device authority.
 - Folded and unfolded experiences are first-class; do not merely stretch compact layouts on the unfolded display.
 - Real-device behavior overrides emulator assumptions for final layout, hinge/fold transitions, chart and map usability, performance, widget appearance, touch targets, typography, and animation decisions.
+- The Fold8 Ultra cover/main emulator targets are the primary layout approximations; Pixel 9 targets are secondary compatibility checks, and `TesMano_Foldable_API_36` is for posture/transition behavior only.
 
 ## Backend safety and security
 
