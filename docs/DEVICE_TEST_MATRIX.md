@@ -18,9 +18,12 @@ Both custom AVDs use the installed Android 16 / API 36 Google APIs ARM64 image. 
 | `TesMano_ZFold8Ultra_Cover_API36` | Primary compact/cover layout approximation. |
 | `TesMano_ZFold8Ultra_Main_API36` | Primary unfolded-width layout approximation. |
 | `TesMano_Foldable_API_36` (Pixel 9 Pro Fold) | Fold/unfold posture, resize, activity-continuity, and folding-feature testing; not the visual baseline. Closed: 1080 × 2424 at 390 dpi. Opened: 2076 × 2152 at 390 dpi. |
-| `TesMano_Phone_API_36` (Pixel 9) | Secondary phone compatibility check only. |
 
-Pixel 9 and Pixel 9 Pro Fold dimensions must not be used as TesMano's primary visual authority.
+Pixel 9 is not a TesMano product or compatibility target. The generic Pixel foldable remains only for posture behavior; its dimensions must not drive UI decisions.
+
+## Emulator process hygiene
+
+Launch a smoke-test AVD detached from the command runner (for example, `nohup emulator -avd <name> >/tmp/tesmano-emulator.log 2>&1 </dev/null &` followed by `disown` where available). After each smoke test, use `adb -s <serial> emu kill` before final Git checks. Do not leave emulator stdio attached to a command wrapper.
 
 ## Physical-device preparation
 
