@@ -6,6 +6,16 @@ import org.junit.Test
 class CarImageResolverTest {
 
     @Test
+    fun `missing custom legacy Model Y asset keeps the dark Gemini fallback`() {
+        assertEquals(
+            "car_images/my_PMNG_WY19B.png",
+            CarImageResolver.getCustomAssetOrFallback(
+                CarImageResolver.LEGACY_MODEL_Y_PERFORMANCE_DARK_GEMINI
+            ) { false }
+        )
+    }
+
+    @Test
     fun `DiamondBlack maps to PX02 color code`() {
         // TeslamateAPI reports the Juniper/Highland black as "DiamondBlack" (one word, no space).
         // Regression: this used to be unmapped, falling back to white (PPSW).

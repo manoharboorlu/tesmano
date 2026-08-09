@@ -35,6 +35,7 @@ object WidgetBackgroundCache {
         val wheelType: String?,
         val overrideVariant: String?,
         val overrideWheel: String?,
+        val overrideCustomAssetKey: String?,
         val isCharging: Boolean,
         val isDcCharging: Boolean
     )
@@ -69,7 +70,7 @@ object WidgetBackgroundCache {
     private fun diskFile(context: Context, key: Key): File {
         val raw = listOf(
             CACHE_VERSION, key.exteriorColor, key.model, key.trimBadging, key.wheelType,
-            key.overrideVariant, key.overrideWheel, key.isCharging, key.isDcCharging
+            key.overrideVariant, key.overrideWheel, key.overrideCustomAssetKey, key.isCharging, key.isDcCharging
         ).joinToString("|")
         val digest = MessageDigest.getInstance("MD5").digest(raw.toByteArray())
         val name = digest.joinToString("") { String.format(Locale.ROOT, "%02x", it) }

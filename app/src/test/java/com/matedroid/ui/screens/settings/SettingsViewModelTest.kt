@@ -8,6 +8,7 @@ import com.matedroid.data.api.models.TeslamateUrls
 import com.matedroid.data.local.AppSettings
 import com.matedroid.data.local.SettingsDataStore
 import com.matedroid.data.repository.ApiResult
+import com.matedroid.data.repository.ConnectionTestInfo
 import com.matedroid.data.repository.TeslamateRepository
 import com.matedroid.data.repository.SentryStateRepository
 import com.matedroid.data.repository.TpmsStateRepository
@@ -130,6 +131,21 @@ class SettingsViewModelTest {
     }
 
     @Test
+    fun `switching authentication mode clears credentials from the inactive mode`() = runTest {
+        viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.updateApiToken("token")
+        viewModel.updateAuthenticationMode(ConnectionAuthenticationMode.BASIC)
+        viewModel.updateHttpBasicAuthUsername("user")
+        viewModel.updateHttpBasicAuthPassword("password")
+
+        assertEquals(ConnectionAuthenticationMode.BASIC, viewModel.uiState.value.authenticationMode)
+        assertEquals("", viewModel.uiState.value.apiToken)
+        assertEquals("user", viewModel.uiState.value.httpBasicAuthUsername)
+    }
+
+    @Test
     fun `testConnection fails with blank url`() = runTest {
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -161,7 +177,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `testConnection succeeds with valid url`() = runTest {
-        coEvery { repository.testConnection(any(), any()) } returns ApiResult.Success(Unit)
+        coEvery { repository.testConnection(any(), any()) } returns ApiResult.Success(ConnectionTestInfo("1.25", 1))
         // Mock global settings fetch (called after successful connection)
         coEvery { repository.getGlobalSettings() } returns ApiResult.Success(GlobalSettingsData(settings = GlobalSettings(teslamateUrls = TeslamateUrls(baseUrl = "https://teslamate.example.com"))))
         coEvery { settingsDataStore.saveTeslamateBaseUrl(any()) } returns Unit
@@ -181,8 +197,8 @@ class SettingsViewModelTest {
 
     @Test
     fun `testConnection tests both servers when secondary is configured`() = runTest {
-        coEvery { repository.testConnection("https://primary.com", any()) } returns ApiResult.Success(Unit)
-        coEvery { repository.testConnection("https://secondary.com", any()) } returns ApiResult.Success(Unit)
+        coEvery { repository.testConnection("https://primary.com", any()) } returns ApiResult.Success(ConnectionTestInfo("1.25", 1))
+        coEvery { repository.testConnection("https://secondary.com", any()) } returns ApiResult.Success(ConnectionTestInfo("1.25", 1))
         // Mock global settings fetch (called after successful connection)
         coEvery { repository.getGlobalSettings() } returns ApiResult.Success(GlobalSettingsData(settings = GlobalSettings(teslamateUrls = TeslamateUrls(baseUrl = "https://teslamate.example.com"))))
         coEvery { settingsDataStore.saveTeslamateBaseUrl(any()) } returns Unit
@@ -205,7 +221,7 @@ class SettingsViewModelTest {
     @Test
     fun `testConnection shows both results when primary fails and secondary succeeds`() = runTest {
         coEvery { repository.testConnection("https://primary.com", any()) } returns ApiResult.Error("Connection refused")
-        coEvery { repository.testConnection("https://secondary.com", any()) } returns ApiResult.Success(Unit)
+        coEvery { repository.testConnection("https://secondary.com", any()) } returns ApiResult.Success(ConnectionTestInfo("1.25", 1))
 
         viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -251,6 +267,7 @@ class SettingsViewModelTest {
 
         viewModel.updateServerUrl("https://saved.com")
         viewModel.updateSecondaryServerUrl("https://backup.com")
+        viewModel.updateAuthenticationMode(ConnectionAuthenticationMode.BEARER)
         viewModel.updateApiToken("saved-token")
         viewModel.updateAcceptInvalidCerts(true)
 
@@ -301,7 +318,7 @@ class SettingsViewModelTest {
 
     @Test
     fun `clearTestResult clears test result`() = runTest {
-        coEvery { repository.testConnection(any(), any()) } returns ApiResult.Success(Unit)
+        coEvery { repository.testConnection(any(), any()) } returns ApiResult.Success(ConnectionTestInfo("1.25", 1))
         // Mock global settings fetch (called after successful connection)
         coEvery { repository.getGlobalSettings() } returns ApiResult.Success(GlobalSettingsData(settings = GlobalSettings(teslamateUrls = TeslamateUrls(baseUrl = "https://teslamate.example.com"))))
         coEvery { settingsDataStore.saveTeslamateBaseUrl(any()) } returns Unit

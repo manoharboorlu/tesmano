@@ -962,7 +962,11 @@ private fun CarImage(
     val hasOverride = imageOverride != null
 
     val assetPath = remember(carModel, carTrimBadging, carExterior, imageOverride, hasOverride) {
-        if (imageOverride != null) {
+        if (imageOverride?.customAssetKey != null) {
+            CarImageResolver.getCustomAssetOrFallback(imageOverride.customAssetKey) { candidate ->
+                runCatching { context.assets.open(candidate).close() }.isSuccess
+            }
+        } else if (imageOverride != null) {
             CarImageResolver.getAssetPathForOverride(
                 variant = imageOverride.variant,
                 colorCode = colorCode,

@@ -17,6 +17,7 @@ import com.matedroid.R
 import com.matedroid.data.local.SettingsDataStore
 import com.matedroid.data.local.TirePosition
 import com.matedroid.data.repository.ApiResult
+import com.matedroid.data.repository.ApiFailure
 import com.matedroid.data.repository.TeslamateRepository
 import com.matedroid.data.repository.SentryStateRepository
 import com.matedroid.data.repository.TpmsStateRepository
@@ -33,12 +34,15 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+enum class ConnectionAuthenticationMode { NONE, BEARER, BASIC }
+
 data class SettingsUiState(
     val serverUrl: String = "",
     val secondaryServerUrl: String = "",
     val apiToken: String = "",
     val httpBasicAuthUsername: String = "",
     val httpBasicAuthPassword: String = "",
+    val authenticationMode: ConnectionAuthenticationMode = ConnectionAuthenticationMode.NONE,
     val acceptInvalidCerts: Boolean = false,
     val currencyCode: String = "EUR",
     val showShortDrivesCharges: Boolean = false,
@@ -55,7 +59,7 @@ data class SettingsUiState(
  * Represents the result of testing a single server connection.
  */
 sealed class ServerTestResult {
-    data object Success : ServerTestResult()
+    data class Success(val apiVersion: String?, val vehicleCount: Int) : ServerTestResult()
     data class Failure(val message: String) : ServerTestResult()
 }
 
@@ -102,6 +106,11 @@ class SettingsViewModel @Inject constructor(
                 apiToken = settings.apiToken,
                 httpBasicAuthUsername = settings.httpBasicAuthUsername,
                 httpBasicAuthPassword = settings.httpBasicAuthPassword,
+                authenticationMode = when {
+                    settings.apiToken.isNotBlank() -> ConnectionAuthenticationMode.BEARER
+                    settings.httpBasicAuthUsername.isNotBlank() || settings.httpBasicAuthPassword.isNotBlank() -> ConnectionAuthenticationMode.BASIC
+                    else -> ConnectionAuthenticationMode.NONE
+                },
                 acceptInvalidCerts = settings.acceptInvalidCerts,
                 currencyCode = settings.currencyCode,
                 showShortDrivesCharges = settings.showShortDrivesCharges,
@@ -134,16 +143,23 @@ class SettingsViewModel @Inject constructor(
         )
     }
 
+    fun updateAuthenticationMode(mode: ConnectionAuthenticationMode) {
+        _uiState.value = _uiState.value.copy(
+            authenticationMode = mode,
+            apiToken = if (mode == ConnectionAuthenticationMode.BEARER) _uiState.value.apiToken else "",
+            httpBasicAuthUsername = if (mode == ConnectionAuthenticationMode.BASIC) _uiState.value.httpBasicAuthUsername else "",
+            httpBasicAuthPassword = if (mode == ConnectionAuthenticationMode.BASIC) _uiState.value.httpBasicAuthPassword else "",
+            testResult = null,
+            error = null
+        )
+    }
+
     fun updateHttpBasicAuthUsername(username: String) {
         _uiState.value = _uiState.value.copy(
             httpBasicAuthUsername = username,
             testResult = null,
             error = null
         )
-        // Save eagerly so testConnection() picks up the unsaved value
-        viewModelScope.launch {
-            settingsDataStore.saveHttpBasicAuth(username, _uiState.value.httpBasicAuthPassword)
-        }
     }
 
     fun updateHttpBasicAuthPassword(password: String) {
@@ -152,10 +168,6 @@ class SettingsViewModel @Inject constructor(
             testResult = null,
             error = null
         )
-        // Save eagerly so testConnection() picks up the unsaved value
-        viewModelScope.launch {
-            settingsDataStore.saveHttpBasicAuth(_uiState.value.httpBasicAuthUsername, password)
-        }
     }
 
     fun updateAcceptInvalidCerts(accept: Boolean) {
@@ -222,16 +234,28 @@ class SettingsViewModel @Inject constructor(
             }
 
             // Test primary server
-            val primaryResult = when (val result = repository.testConnection(primaryUrl, _uiState.value.acceptInvalidCerts)) {
-                is ApiResult.Success -> ServerTestResult.Success
-                is ApiResult.Error -> ServerTestResult.Failure(result.message)
+            val primaryResult = when (val result = repository.testConnection(
+                serverUrl = primaryUrl,
+                acceptInvalidCerts = _uiState.value.acceptInvalidCerts,
+                apiToken = _uiState.value.apiToken.takeIf { _uiState.value.authenticationMode == ConnectionAuthenticationMode.BEARER }.orEmpty(),
+                basicAuthUsername = _uiState.value.httpBasicAuthUsername.takeIf { _uiState.value.authenticationMode == ConnectionAuthenticationMode.BASIC }.orEmpty(),
+                basicAuthPassword = _uiState.value.httpBasicAuthPassword.takeIf { _uiState.value.authenticationMode == ConnectionAuthenticationMode.BASIC }.orEmpty()
+            )) {
+                is ApiResult.Success -> ServerTestResult.Success(result.data.apiVersion, result.data.vehicleCount)
+                is ApiResult.Error -> ServerTestResult.Failure(connectionFailureMessage(result))
             }
 
             // Test secondary server if configured
             val secondaryResult = if (secondaryUrl.isNotBlank()) {
-                when (val result = repository.testConnection(secondaryUrl, _uiState.value.acceptInvalidCerts)) {
-                    is ApiResult.Success -> ServerTestResult.Success
-                    is ApiResult.Error -> ServerTestResult.Failure(result.message)
+                when (val result = repository.testConnection(
+                    serverUrl = secondaryUrl,
+                    acceptInvalidCerts = _uiState.value.acceptInvalidCerts,
+                    apiToken = _uiState.value.apiToken.takeIf { _uiState.value.authenticationMode == ConnectionAuthenticationMode.BEARER }.orEmpty(),
+                    basicAuthUsername = _uiState.value.httpBasicAuthUsername.takeIf { _uiState.value.authenticationMode == ConnectionAuthenticationMode.BASIC }.orEmpty(),
+                    basicAuthPassword = _uiState.value.httpBasicAuthPassword.takeIf { _uiState.value.authenticationMode == ConnectionAuthenticationMode.BASIC }.orEmpty()
+                )) {
+                    is ApiResult.Success -> ServerTestResult.Success(result.data.apiVersion, result.data.vehicleCount)
+                    is ApiResult.Error -> ServerTestResult.Failure(connectionFailureMessage(result))
                 }
             } else {
                 null
@@ -289,9 +313,9 @@ class SettingsViewModel @Inject constructor(
                 settingsDataStore.saveSettings(
                     serverUrl = url,
                     secondaryServerUrl = secondaryUrl,
-                    apiToken = _uiState.value.apiToken,
-                    httpBasicAuthUsername = _uiState.value.httpBasicAuthUsername,
-                    httpBasicAuthPassword = _uiState.value.httpBasicAuthPassword,
+                    apiToken = _uiState.value.apiToken.takeIf { _uiState.value.authenticationMode == ConnectionAuthenticationMode.BEARER }.orEmpty(),
+                    httpBasicAuthUsername = _uiState.value.httpBasicAuthUsername.takeIf { _uiState.value.authenticationMode == ConnectionAuthenticationMode.BASIC }.orEmpty(),
+                    httpBasicAuthPassword = _uiState.value.httpBasicAuthPassword.takeIf { _uiState.value.authenticationMode == ConnectionAuthenticationMode.BASIC }.orEmpty(),
                     acceptInvalidCerts = _uiState.value.acceptInvalidCerts,
                     currencyCode = _uiState.value.currencyCode
                 )
@@ -312,6 +336,17 @@ class SettingsViewModel @Inject constructor(
 
     fun clearTestResult() {
         _uiState.value = _uiState.value.copy(testResult = null)
+    }
+
+    private fun connectionFailureMessage(result: ApiResult.Error): String = when (result.code) {
+        401 -> "Authentication was rejected (HTTP 401)"
+        403 -> "Access is forbidden (HTTP 403)"
+        404 -> "TeslaMateApi endpoint was not found (HTTP 404)"
+        else -> when (result.failure) {
+            ApiFailure.MISSING_DATA, ApiFailure.SERVER_ENVELOPE -> "Unsupported or incompatible TeslaMateApi response"
+            ApiFailure.HTTP -> "Server returned HTTP ${result.code ?: "error"}"
+            ApiFailure.TRANSPORT -> result.message
+        }
     }
 
     fun clearError() {

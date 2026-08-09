@@ -36,6 +36,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -76,7 +77,7 @@ import com.matedroid.R
 import com.matedroid.data.local.TirePosition
 import com.matedroid.data.model.Currency
 import com.matedroid.ui.components.MateDroidLoadingPlaceholder
-import com.matedroid.ui.theme.MateDroidTheme
+import com.matedroid.ui.theme.TesManoTheme
 import com.matedroid.ui.theme.StatusWarning
 import com.matedroid.ui.theme.StatusError
 import com.matedroid.ui.theme.StatusSuccess
@@ -122,6 +123,7 @@ fun SettingsScreen(
                 onServerUrlChange = viewModel::updateServerUrl,
                 onSecondaryServerUrlChange = viewModel::updateSecondaryServerUrl,
                 onApiTokenChange = viewModel::updateApiToken,
+                onAuthenticationModeChange = viewModel::updateAuthenticationMode,
                 onHttpBasicAuthUsernameChange = viewModel::updateHttpBasicAuthUsername,
                 onHttpBasicAuthPasswordChange = viewModel::updateHttpBasicAuthPassword,
                 onAcceptInvalidCertsChange = viewModel::updateAcceptInvalidCerts,
@@ -193,6 +195,7 @@ private fun SettingsContent(
     onServerUrlChange: (String) -> Unit,
     onSecondaryServerUrlChange: (String) -> Unit,
     onApiTokenChange: (String) -> Unit,
+    onAuthenticationModeChange: (ConnectionAuthenticationMode) -> Unit,
     onHttpBasicAuthUsernameChange: (String) -> Unit,
     onHttpBasicAuthPasswordChange: (String) -> Unit,
     onAcceptInvalidCertsChange: (Boolean) -> Unit,
@@ -283,7 +286,31 @@ private fun SettingsContent(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // API Token
+            Text(
+                text = stringResource(R.string.settings_authentication_mode),
+                style = MaterialTheme.typography.labelLarge
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = uiState.authenticationMode == ConnectionAuthenticationMode.NONE,
+                    onClick = { onAuthenticationModeChange(ConnectionAuthenticationMode.NONE) },
+                    label = { Text(stringResource(R.string.settings_auth_none)) }
+                )
+                FilterChip(
+                    selected = uiState.authenticationMode == ConnectionAuthenticationMode.BEARER,
+                    onClick = { onAuthenticationModeChange(ConnectionAuthenticationMode.BEARER) },
+                    label = { Text(stringResource(R.string.settings_auth_bearer)) }
+                )
+                FilterChip(
+                    selected = uiState.authenticationMode == ConnectionAuthenticationMode.BASIC,
+                    onClick = { onAuthenticationModeChange(ConnectionAuthenticationMode.BASIC) },
+                    label = { Text(stringResource(R.string.settings_auth_basic)) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            if (uiState.authenticationMode == ConnectionAuthenticationMode.BEARER) {
             OutlinedTextField(
                 value = uiState.apiToken,
                 onValueChange = onApiTokenChange,
@@ -324,8 +351,9 @@ private fun SettingsContent(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+            }
 
-            // HTTP Basic Auth
+            if (uiState.authenticationMode == ConnectionAuthenticationMode.BASIC) {
             OutlinedTextField(
                 value = uiState.httpBasicAuthUsername,
                 onValueChange = onHttpBasicAuthUsernameChange,
@@ -376,6 +404,7 @@ private fun SettingsContent(
             )
 
             Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // Accept invalid certificates toggle
             Row(
@@ -751,7 +780,7 @@ private fun SettingsContent(
         // Version number and issue link at bottom
         Spacer(modifier = Modifier.height(48.dp))
         Text(
-            text = "v${com.matedroid.BuildConfig.VERSION_NAME} (${com.matedroid.BuildConfig.GIT_SHA})",
+            text = "${com.matedroid.BuildConfig.PRODUCT_NAME} v${com.matedroid.BuildConfig.VERSION_NAME} · ${com.matedroid.BuildConfig.BUILD_TYPE} · ${com.matedroid.BuildConfig.GIT_SHA}\nUpstream ${com.matedroid.BuildConfig.UPSTREAM_BASELINE_SHA.take(8)}",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
             modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -812,7 +841,12 @@ private fun ServerTestResultRow(
         is ServerTestResult.Success -> Triple(
             Icons.Filled.CheckCircle,
             StatusSuccess,
-            connectedText
+            buildString {
+                append(connectedText)
+                append(" · ${result.vehicleCount} vehicle")
+                if (result.vehicleCount != 1) append("s")
+                result.apiVersion?.let { append(" · API $it") }
+            }
         )
         is ServerTestResult.Failure -> Triple(
             Icons.Filled.Error,
@@ -850,12 +884,13 @@ private fun ServerTestResultRow(
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenPreview() {
-    MateDroidTheme {
+    TesManoTheme {
         SettingsContent(
             uiState = SettingsUiState(isLoading = false),
             onServerUrlChange = {},
             onSecondaryServerUrlChange = {},
             onApiTokenChange = {},
+            onAuthenticationModeChange = {},
             onHttpBasicAuthUsernameChange = {},
             onHttpBasicAuthPasswordChange = {},
             onAcceptInvalidCertsChange = {},
@@ -870,18 +905,19 @@ private fun SettingsScreenPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenWithResultPreview() {
-    MateDroidTheme {
+    TesManoTheme {
         SettingsContent(
             uiState = SettingsUiState(
                 isLoading = false,
                 serverUrl = "https://teslamate.example.com",
                 testResult = TestResult(
-                    primaryResult = ServerTestResult.Success
+                    primaryResult = ServerTestResult.Success(apiVersion = "1.25", vehicleCount = 1)
                 )
             ),
             onServerUrlChange = {},
             onSecondaryServerUrlChange = {},
             onApiTokenChange = {},
+            onAuthenticationModeChange = {},
             onHttpBasicAuthUsernameChange = {},
             onHttpBasicAuthPasswordChange = {},
             onAcceptInvalidCertsChange = {},
@@ -896,7 +932,7 @@ private fun SettingsScreenWithResultPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenWithBothResultsPreview() {
-    MateDroidTheme {
+    TesManoTheme {
         SettingsContent(
             uiState = SettingsUiState(
                 isLoading = false,
@@ -904,12 +940,13 @@ private fun SettingsScreenWithBothResultsPreview() {
                 secondaryServerUrl = "https://teslamate.local",
                 testResult = TestResult(
                     primaryResult = ServerTestResult.Failure("Connection timed out"),
-                    secondaryResult = ServerTestResult.Success
+                    secondaryResult = ServerTestResult.Success(apiVersion = "1.25", vehicleCount = 1)
                 )
             ),
             onServerUrlChange = {},
             onSecondaryServerUrlChange = {},
             onApiTokenChange = {},
+            onAuthenticationModeChange = {},
             onHttpBasicAuthUsernameChange = {},
             onHttpBasicAuthPasswordChange = {},
             onAcceptInvalidCertsChange = {},
@@ -924,7 +961,7 @@ private fun SettingsScreenWithBothResultsPreview() {
 @Preview(showBackground = true)
 @Composable
 private fun SettingsScreenWithWarningPreview() {
-    MateDroidTheme {
+    TesManoTheme {
         SettingsContent(
             uiState = SettingsUiState(
                 isLoading = false,
@@ -934,6 +971,7 @@ private fun SettingsScreenWithWarningPreview() {
             onServerUrlChange = {},
             onSecondaryServerUrlChange = {},
             onApiTokenChange = {},
+            onAuthenticationModeChange = {},
             onHttpBasicAuthUsernameChange = {},
             onHttpBasicAuthPasswordChange = {},
             onAcceptInvalidCertsChange = {},

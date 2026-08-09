@@ -53,6 +53,12 @@ data class CarStatusWithUnits(
 
 data class ApiCompatibility(val reportedVersion: String? = null)
 
+/** Read-only connection discovery result; never contains credentials or endpoint secrets. */
+data class ConnectionTestInfo(
+    val apiVersion: String?,
+    val vehicleCount: Int
+)
+
 internal fun <B : ApiEnvelope, T> mapApiEnvelope(
     body: B?,
     code: Int,
@@ -230,18 +236,37 @@ class TeslamateRepository @Inject constructor(
         return primaryResult ?: ApiResult.Error("Connection failed")
     }
 
-    suspend fun testConnection(serverUrl: String, acceptInvalidCerts: Boolean = false): ApiResult<Unit> {
+    suspend fun testConnection(
+        serverUrl: String,
+        acceptInvalidCerts: Boolean = false,
+        apiToken: String = "",
+        basicAuthUsername: String = "",
+        basicAuthPassword: String = ""
+    ): ApiResult<ConnectionTestInfo> {
         return try {
-            val api = apiFactory.create(serverUrl, acceptInvalidCerts)
+            val api = apiFactory.create(
+                baseUrl = serverUrl,
+                acceptInvalidCerts = acceptInvalidCerts,
+                apiTokenOverride = apiToken,
+                basicAuthUsernameOverride = basicAuthUsername,
+                basicAuthPasswordOverride = basicAuthPassword
+            )
             val response = api.ping()
             recordApiVersion(response)
-            if (response.isSuccessful) {
-                ApiResult.Success(Unit)
-            } else {
-                ApiResult.Error("Server returned ${response.code()}", response.code())
-            }
+            if (!response.isSuccessful) return ApiResult.Error("Server returned ${response.code()}", response.code(), failure = ApiFailure.HTTP)
+
+            val carsResponse = api.getCars()
+            recordApiVersion(carsResponse)
+            if (!carsResponse.isSuccessful) return ApiResult.Error("Vehicle discovery returned ${carsResponse.code()}", carsResponse.code(), failure = ApiFailure.HTTP)
+            val cars = carsResponse.body()?.data?.cars
+                ?: return ApiResult.Error("Unsupported or incompatible TeslaMateApi response", carsResponse.code(), failure = ApiFailure.MISSING_DATA)
+            ApiResult.Success(ConnectionTestInfo(mutableApiCompatibility.value.reportedVersion, cars.size))
         } catch (e: javax.net.ssl.SSLHandshakeException) {
-            ApiResult.Error("SSL certificate error. Enable 'Accept invalid certificates' for self-signed certs.")
+            ApiResult.Error("TLS certificate validation failed", failure = ApiFailure.TRANSPORT)
+        } catch (e: java.net.UnknownHostException) {
+            ApiResult.Error("DNS lookup failed", failure = ApiFailure.TRANSPORT)
+        } catch (e: java.net.SocketTimeoutException) {
+            ApiResult.Error("Connection timed out", failure = ApiFailure.TRANSPORT)
         } catch (e: Exception) {
             ApiResult.Error(e.message ?: "Connection failed")
         }

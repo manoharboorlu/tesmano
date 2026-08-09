@@ -24,9 +24,15 @@ import javax.inject.Singleton
  */
 data class CarImageOverride(
     val variant: String,
-    val wheelCode: String
+    val wheelCode: String,
+    /** Stable key for an optional, bundled vehicle illustration. */
+    val customAssetKey: String? = null
 ) {
-    fun toJson(): String = """{"variant":"$variant","wheelCode":"$wheelCode"}"""
+    fun toJson(): String = JSONObject().apply {
+        put("variant", variant)
+        put("wheelCode", wheelCode)
+        customAssetKey?.let { put("customAssetKey", it) }
+    }.toString()
 
     companion object {
         fun fromJson(json: String): CarImageOverride? {
@@ -34,7 +40,8 @@ data class CarImageOverride(
                 val obj = JSONObject(json)
                 CarImageOverride(
                     variant = obj.getString("variant"),
-                    wheelCode = obj.getString("wheelCode")
+                    wheelCode = obj.getString("wheelCode"),
+                    customAssetKey = obj.optString("customAssetKey").takeIf { it.isNotBlank() }
                 )
             } catch (e: Exception) {
                 null
@@ -149,7 +156,8 @@ class SettingsDataStore @Inject constructor(
                 val overrideJson = obj.getJSONObject(key)
                 val override = CarImageOverride(
                     variant = overrideJson.getString("variant"),
-                    wheelCode = overrideJson.getString("wheelCode")
+                    wheelCode = overrideJson.getString("wheelCode"),
+                    customAssetKey = overrideJson.optString("customAssetKey").takeIf { it.isNotBlank() }
                 )
                 result[carId] = override
             }

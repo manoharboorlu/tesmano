@@ -128,6 +128,7 @@ class CarWidget : GlanceAppWidget() {
         val SENTRY_EVENT_COUNT_KEY = intPreferencesKey("sentry_event_count")   // 0 = none
         val IMAGE_OVERRIDE_VARIANT_KEY = stringPreferencesKey("image_override_variant")
         val IMAGE_OVERRIDE_WHEEL_KEY = stringPreferencesKey("image_override_wheel")
+        val IMAGE_OVERRIDE_CUSTOM_ASSET_KEY = stringPreferencesKey("image_override_custom_asset")
         val LOCATION_TEXT_KEY = stringPreferencesKey("location_text")
         val IS_IMPERIAL_KEY = booleanPreferencesKey("is_imperial")
     }
@@ -249,6 +250,7 @@ class CarWidget : GlanceAppWidget() {
                                 wheelType = prefs[WHEEL_TYPE_KEY],
                                 overrideVariant = prefs[IMAGE_OVERRIDE_VARIANT_KEY],
                                 overrideWheel = prefs[IMAGE_OVERRIDE_WHEEL_KEY],
+                                overrideCustomAssetKey = prefs[IMAGE_OVERRIDE_CUSTOM_ASSET_KEY],
                                 isCharging = isCharging,
                                 isDcCharging = isDcCharging
                             )
@@ -621,9 +623,12 @@ class CarWidget : GlanceAppWidget() {
                 if (data.imageOverride != null) {
                     this[IMAGE_OVERRIDE_VARIANT_KEY] = data.imageOverride.variant
                     this[IMAGE_OVERRIDE_WHEEL_KEY] = data.imageOverride.wheelCode
+                    data.imageOverride.customAssetKey?.let { this[IMAGE_OVERRIDE_CUSTOM_ASSET_KEY] = it }
+                        ?: remove(IMAGE_OVERRIDE_CUSTOM_ASSET_KEY)
                 } else {
                     remove(IMAGE_OVERRIDE_VARIANT_KEY)
                     remove(IMAGE_OVERRIDE_WHEEL_KEY)
+                    remove(IMAGE_OVERRIDE_CUSTOM_ASSET_KEY)
                 }
                 if (data.locationText != null) {
                     this[LOCATION_TEXT_KEY] = data.locationText
@@ -666,7 +671,8 @@ class CarWidget : GlanceAppWidget() {
 
         val palette = CarColorPalettes.forExteriorColor(exteriorColor, darkTheme = true)
 
-        val carBitmap = loadCarBitmap(context, model, exteriorColor, wheelType, trimBadging, overrideVariant, overrideWheel)
+        val customAssetKey = prefs[IMAGE_OVERRIDE_CUSTOM_ASSET_KEY]
+        val carBitmap = loadCarBitmap(context, model, exteriorColor, wheelType, trimBadging, overrideVariant, overrideWheel, customAssetKey)
         val width = carBitmap?.width ?: FALLBACK_BG_W
         val height = carBitmap?.height ?: FALLBACK_BG_H
 
@@ -858,10 +864,15 @@ class CarWidget : GlanceAppWidget() {
         wheelType: String?,
         trimBadging: String?,
         overrideVariant: String? = null,
-        overrideWheel: String? = null
+        overrideWheel: String? = null,
+        overrideCustomAssetKey: String? = null
     ): Bitmap? {
         val colorCode = CarImageResolver.mapColor(exteriorColor)
-        val assetPath = if (overrideVariant != null && overrideWheel != null) {
+        val assetPath = if (overrideCustomAssetKey != null) {
+            CarImageResolver.getCustomAssetOrFallback(overrideCustomAssetKey) { candidate ->
+                runCatching { context.assets.open(candidate).close() }.isSuccess
+            }
+        } else if (overrideVariant != null && overrideWheel != null) {
             CarImageResolver.getAssetPathForOverride(overrideVariant, colorCode, overrideWheel)
         } else {
             CarImageResolver.getAssetPath(model, exteriorColor, wheelType, trimBadging)

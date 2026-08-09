@@ -36,6 +36,12 @@ The requested phase sequence is retained, with one safety adjustment: Phase 1 es
 - Deferred: the canonical timestamp migration remains documented in `TIME_MODEL.md`; sync stores the server's raw RFC 3339 high-water string only to use the existing API `startDate` filter and does not alter timestamp/domain semantics.
 - Deferred: deletion reconciliation, Room-backed UI paging, and user-facing cache controls remain later performance/UI work.
 
+### Phase 1C completion note
+
+- TesMano now has a separate installed identity (`com.manohar.tesmano`), a dark-only token foundation, Fold8 cover/main window policy, existing-server connection discovery, and a custom vehicle-art resolution path.
+- Product-facing identity changes retain the internal `com.matedroid` Kotlin namespace temporarily to preserve upstream mergeability and avoid a cosmetic package migration.
+- Private distribution is documented as signed AAB delivery through Google Play Internal Testing; Play configuration remains release-hardening work.
+
 ### Exit gate
 
 - New York winter/summer/DST/midnight tests pass end to end.
@@ -50,7 +56,7 @@ The requested phase sequence is retained, with one safety adjustment: Phase 1 es
 
 ### Scope
 
-- Rename product-facing identity and assets; defer application ID migration until signing/data implications are settled.
+- Refine the established TesMano product-facing identity and assets without changing the settled application ID/data boundary.
 - Create typography, color, spacing, shape, motion, elevation and chart/map token systems.
 - Define compact/unfolded pane widths, touch targets, safe/hinge insets and density rules.
 - Build reusable loading/error/empty/offline/sync components and screenshot catalog.

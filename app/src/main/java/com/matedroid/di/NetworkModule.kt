@@ -49,7 +49,7 @@ internal fun resolveReadAuthentication(
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val USER_AGENT = "MateDroid/${BuildConfig.VERSION_NAME}"
+    private const val USER_AGENT = "TesMano/${BuildConfig.VERSION_NAME}"
 
     private val userAgentInterceptor = Interceptor { chain ->
         val request = chain.request().newBuilder()
@@ -140,7 +140,13 @@ class TeslamateApiFactory(
      * @param acceptInvalidCerts Override for accepting invalid certificates. If null, uses the setting from DataStore.
      * @return A TeslamateApi instance configured for the given URL
      */
-    suspend fun create(baseUrl: String, acceptInvalidCerts: Boolean? = null): TeslamateApi {
+    suspend fun create(
+        baseUrl: String,
+        acceptInvalidCerts: Boolean? = null,
+        apiTokenOverride: String? = null,
+        basicAuthUsernameOverride: String? = null,
+        basicAuthPasswordOverride: String? = null
+    ): TeslamateApi {
         val normalizedUrl = baseUrl.trimEnd('/') + "/"
         require(BuildConfig.DEBUG || normalizedUrl.toHttpUrl().isHttps) {
             "Release builds require an HTTPS TeslaMateApi URL"
@@ -148,9 +154,9 @@ class TeslamateApiFactory(
         settingsDataStore.migrateLegacySecretsIfNeeded()
         val settings = settingsDataStore.settings.first()
         val useInsecure = BuildConfig.DEBUG && (acceptInvalidCerts ?: settings.acceptInvalidCerts)
-        val apiToken = settings.apiToken
-        val basicAuthUsername = settings.httpBasicAuthUsername
-        val basicAuthPassword = settings.httpBasicAuthPassword
+        val apiToken = apiTokenOverride ?: settings.apiToken
+        val basicAuthUsername = basicAuthUsernameOverride ?: settings.httpBasicAuthUsername
+        val basicAuthPassword = basicAuthPasswordOverride ?: settings.httpBasicAuthPassword
 
         val cacheKey = ApiCacheKey(normalizedUrl, useInsecure, apiToken, basicAuthUsername, basicAuthPassword)
 
@@ -196,7 +202,7 @@ class TeslamateApiFactory(
         val builder = OkHttpClient.Builder()
             .addInterceptor { chain ->
                 val requestBuilder = chain.request().newBuilder()
-                    .header("User-Agent", "MateDroid/${BuildConfig.VERSION_NAME}")
+                    .header("User-Agent", "TesMano/${BuildConfig.VERSION_NAME}")
                 val authentication = resolveReadAuthentication(apiToken, basicAuthUsername, basicAuthPassword)
                 when (authentication.mode) {
                     ApiAuthMode.BASIC -> requestBuilder.header("Authorization", authentication.value!!)

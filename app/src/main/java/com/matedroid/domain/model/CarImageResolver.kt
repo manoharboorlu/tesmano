@@ -47,6 +47,18 @@ data class WheelOption(
  */
 object CarImageResolver {
 
+    /**
+     * Bundled custom illustrations are opt-in and never change automatic vehicle
+     * inference. Until artwork exists, the legacy dark-Gemini asset is retained.
+     */
+    const val LEGACY_MODEL_Y_PERFORMANCE_DARK_GEMINI = "legacy_model_y_performance_dark_gemini"
+    private const val LEGACY_DARK_GEMINI_FALLBACK = "car_images/my_PMNG_WY19B.png"
+
+    fun getCustomAssetOrFallback(customAssetKey: String, assetExists: (String) -> Boolean): String {
+        val candidate = "car_images/custom/$customAssetKey.png"
+        return if (assetExists(candidate)) candidate else LEGACY_DARK_GEMINI_FALLBACK
+    }
+
     // Color code mappings (TeslamateAPI -> Compositor)
     // Keys are normalized (lowercase, no spaces)
     private val COLOR_CODES = mapOf(
