@@ -1,0 +1,125 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "TesMano: Test",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": ["test"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "JAVA_HOME": "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
+          "ANDROID_HOME": "${env:HOME}/Library/Android/sdk",
+          "ANDROID_SDK_ROOT": "${env:HOME}/Library/Android/sdk"
+        }
+      },
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "TesMano: Lint",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": ["lint"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "JAVA_HOME": "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
+          "ANDROID_HOME": "${env:HOME}/Library/Android/sdk",
+          "ANDROID_SDK_ROOT": "${env:HOME}/Library/Android/sdk"
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "TesMano: Build Debug",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": ["assembleDebug"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "JAVA_HOME": "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
+          "ANDROID_HOME": "${env:HOME}/Library/Android/sdk",
+          "ANDROID_SDK_ROOT": "${env:HOME}/Library/Android/sdk"
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "TesMano: Install Debug",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": ["installDebug"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "JAVA_HOME": "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
+          "ANDROID_HOME": "${env:HOME}/Library/Android/sdk",
+          "ANDROID_SDK_ROOT": "${env:HOME}/Library/Android/sdk"
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "TesMano: Connected Tests",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": ["connectedDebugAndroidTest"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "JAVA_HOME": "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
+          "ANDROID_HOME": "${env:HOME}/Library/Android/sdk",
+          "ANDROID_SDK_ROOT": "${env:HOME}/Library/Android/sdk"
+        }
+      },
+      "group": "test",
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "TesMano: Clean",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": ["clean"],
+      "options": {
+        "cwd": "${workspaceFolder}",
+        "env": {
+          "JAVA_HOME": "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home",
+          "ANDROID_HOME": "${env:HOME}/Library/Android/sdk",
+          "ANDROID_SDK_ROOT": "${env:HOME}/Library/Android/sdk"
+        }
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared"
+      }
+    }
+  ]
+}
