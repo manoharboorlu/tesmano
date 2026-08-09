@@ -13,7 +13,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import com.matedroid.ui.navigation.NavGraph
-import com.matedroid.ui.theme.MateDroidTheme
+import com.matedroid.ui.adaptive.ProvideAdaptiveLayout
+import com.matedroid.ui.theme.TesManoTheme
 import com.matedroid.widget.CarWidgetUpdateWorker
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -30,12 +31,14 @@ class MainActivity : ComponentActivity() {
         }
         enableEdgeToEdge()
         setContent {
-            MateDroidTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    NavGraph(intent = currentIntent)
+            TesManoTheme {
+                ProvideAdaptiveLayout {
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        NavGraph(intent = currentIntent)
+                    }
                 }
             }
         }

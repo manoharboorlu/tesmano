@@ -2,6 +2,15 @@ package com.matedroid.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
+// TesMano dark-only foundation: restrained graphite surfaces and Performance red.
+val PerformanceRed = Color(0xFFC74A4A)
+val PerformanceRedContainer = Color(0xFF5A2227)
+val GraphiteBlack = Color(0xFF101112)
+val GraphiteSurface = Color(0xFF181A1C)
+val GraphiteSurfaceRaised = Color(0xFF222529)
+val GraphiteOutline = Color(0xFF454A50)
+val CoolNeutral = Color(0xFFB8C0C9)
+
 // Neutral base colors (cool grey/blue-grey - works with any car color)
 val NeutralPrimary = Color(0xFF5C6670)
 val NeutralDark = Color(0xFF1C1F23)
@@ -37,27 +46,27 @@ val ErrorLight = StatusError
 val OnErrorLight = Color.White
 
 // Dark theme colors - neutral cool grey
-val PrimaryDark = Color(0xFF9BA4AD)
-val OnPrimaryDark = Color(0xFF1C1F23)
-val PrimaryContainerDark = Color(0xFF3A3F44)
-val OnPrimaryContainerDark = Color(0xFFE8EAEC)
-val SecondaryDark = Color(0xFFC6C8CA)
-val OnSecondaryDark = Color(0xFF303234)
-val SecondaryContainerDark = Color(0xFF44474A)
-val OnSecondaryContainerDark = Color(0xFFE2E4E6)
-val TertiaryDark = Color(0xFF8FA4B8)
-val OnTertiaryDark = Color(0xFF1A2235)
-val BackgroundDark = Color(0xFF1C1B1F)
-val OnBackgroundDark = Color(0xFFE6E1E5)
-val SurfaceDark = Color(0xFF1C1B1F)
-val OnSurfaceDark = Color(0xFFE6E1E5)
-val SurfaceVariantDark = Color(0xFF44474A)
-val OnSurfaceVariantDark = Color(0xFFCACCCE)
-val OutlineDark = Color(0xFF8E9194)
-val OutlineVariantDark = Color(0xFF44474A)
-val SurfaceContainerDark = Color(0xFF242629)
-val SurfaceContainerHighDark = Color(0xFF2B2D31)
-val SurfaceContainerHighestDark = Color(0xFF35373B)
+val PrimaryDark = PerformanceRed
+val OnPrimaryDark = Color(0xFFFFFFFF)
+val PrimaryContainerDark = PerformanceRedContainer
+val OnPrimaryContainerDark = Color(0xFFFFDAD9)
+val SecondaryDark = CoolNeutral
+val OnSecondaryDark = GraphiteBlack
+val SecondaryContainerDark = GraphiteSurfaceRaised
+val OnSecondaryContainerDark = Color(0xFFE0E5EA)
+val TertiaryDark = Color(0xFF9AB1C5)
+val OnTertiaryDark = GraphiteBlack
+val BackgroundDark = GraphiteBlack
+val OnBackgroundDark = Color(0xFFE5E8EB)
+val SurfaceDark = GraphiteSurface
+val OnSurfaceDark = Color(0xFFE5E8EB)
+val SurfaceVariantDark = GraphiteSurfaceRaised
+val OnSurfaceVariantDark = Color(0xFFC4CAD1)
+val OutlineDark = Color(0xFF9098A1)
+val OutlineVariantDark = GraphiteOutline
+val SurfaceContainerDark = GraphiteSurface
+val SurfaceContainerHighDark = GraphiteSurfaceRaised
+val SurfaceContainerHighestDark = Color(0xFF2B2F34)
 val ErrorDark = Color(0xFFFFB4AB)
 val OnErrorDark = Color(0xFF690005)
 

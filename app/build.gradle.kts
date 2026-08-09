@@ -54,11 +54,11 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.matedroid"
+        applicationId = "com.manohar.tesmano"
         minSdk = 28
         targetSdk = 36
         versionCode = 178293972
-        versionName = "1.10.0"
+        versionName = "0.1.0-dev"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -67,6 +67,8 @@ android {
             commandLine("git", "rev-parse", "--short", "HEAD")
         }.standardOutput.asText.get().trim()
         buildConfigField("String", "GIT_SHA", "\"$gitSha\"")
+        buildConfigField("String", "UPSTREAM_BASELINE_SHA", "\"9333a14521e232147df4f47e72cccff68531ad10\"")
+        buildConfigField("String", "PRODUCT_NAME", "\"TesMano\"")
     }
 
     signingConfigs {
@@ -172,6 +174,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.compose.material3.windowsizeclass)
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
 
@@ -207,6 +210,7 @@ dependencies {
     implementation(libs.glance.material3)
     // Maps
     implementation(libs.osmdroid)
+    implementation(libs.androidx.window)
 
     // Testing
     testImplementation(libs.junit)

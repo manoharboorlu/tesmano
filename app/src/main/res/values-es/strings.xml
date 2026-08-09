@@ -1,7 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- App name shown in launcher and system settings -->
-    <string name="app_name">MateDroid</string>
+    <string name="app_name">TesMano</string>
+    <string name="settings_authentication_mode">Autenticación</string>
+    <string name="settings_auth_none">Ninguna</string>
+    <string name="settings_auth_bearer">Token Bearer</string>
+    <string name="settings_auth_basic">Autenticación básica</string>
 
     <!-- ==================== Common / Shared ==================== -->
     <!-- Generic button labels used throughout the app -->

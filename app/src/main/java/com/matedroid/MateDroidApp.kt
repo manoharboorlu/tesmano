@@ -40,7 +40,7 @@ class MateDroidApp : Application(), Configuration.Provider {
 
         // Configure OSMDroid tile cache (shared across all map screens)
         org.osmdroid.config.Configuration.getInstance().apply {
-            userAgentValue = "MateDroid/${BuildConfig.VERSION_NAME}"
+            userAgentValue = "TesMano/${BuildConfig.VERSION_NAME}"
             osmdroidTileCache = File(cacheDir, "osmdroid")
             tileFileSystemCacheMaxBytes = 100L * 1024 * 1024  // 100 MB
             tileFileSystemCacheTrimBytes = 80L * 1024 * 1024  // trim to 80 MB
@@ -89,6 +89,6 @@ class MateDroidApp : Application(), Configuration.Provider {
             syncRequest
         )
 
-        Log.d("MateDroidApp", "Enqueued sync work")
+        Log.d("TesManoApp", "Enqueued sync work")
     }
 }
