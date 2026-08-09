@@ -5,8 +5,9 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class ChargesResponse(
-    @Json(name = "data") val data: ChargesData? = null
-)
+    @Json(name = "data") val data: ChargesData? = null,
+    @Json(name = "error") override val error: String? = null
+) : ApiEnvelope
 
 @JsonClass(generateAdapter = true)
 data class ChargesData(
@@ -57,8 +58,8 @@ data class ChargeDetailResponse(
     @Json(name = "data") val data: ChargeDetailData? = null,
     // TeslamateAPI returns HTTP 200 with this error field (and no data) when
     // there is no active charge, e.g. "No active charging in progress."
-    @Json(name = "error") val error: String? = null
-)
+    @Json(name = "error") override val error: String? = null
+) : ApiEnvelope
 
 @JsonClass(generateAdapter = true)
 data class ChargeDetailData(

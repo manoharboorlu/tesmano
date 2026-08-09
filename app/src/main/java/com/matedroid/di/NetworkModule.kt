@@ -25,6 +25,25 @@ import javax.net.ssl.SSLContext
 import javax.net.ssl.TrustManager
 import javax.net.ssl.X509TrustManager
 
+enum class ApiAuthMode { NONE, BASIC, BEARER }
+
+internal data class ReadAuthentication(
+    val mode: ApiAuthMode,
+    val value: String? = null
+)
+
+/** A configured Bearer token takes precedence over Basic credentials; never emit two Authorization headers. */
+internal fun resolveReadAuthentication(
+    apiToken: String,
+    basicUsername: String,
+    basicPassword: String
+): ReadAuthentication = when {
+    apiToken.isNotBlank() -> ReadAuthentication(ApiAuthMode.BEARER, apiToken)
+    basicUsername.isNotBlank() && basicPassword.isNotBlank() ->
+        ReadAuthentication(ApiAuthMode.BASIC, okhttp3.Credentials.basic(basicUsername, basicPassword))
+    else -> ReadAuthentication(ApiAuthMode.NONE)
+}
+
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
@@ -173,12 +192,11 @@ class TeslamateApiFactory(
             .addInterceptor { chain ->
                 val requestBuilder = chain.request().newBuilder()
                     .header("User-Agent", "MateDroid/${BuildConfig.VERSION_NAME}")
-                if (basicAuthUsername.isNotBlank() && basicAuthPassword.isNotBlank()) {
-                    requestBuilder.addHeader("Authorization",
-                        okhttp3.Credentials.basic(basicAuthUsername, basicAuthPassword))
-                }
-                if (apiToken.isNotBlank()) {
-                    requestBuilder.addHeader("Authorization", "Bearer $apiToken")
+                val authentication = resolveReadAuthentication(apiToken, basicAuthUsername, basicAuthPassword)
+                when (authentication.mode) {
+                    ApiAuthMode.BASIC -> requestBuilder.header("Authorization", authentication.value!!)
+                    ApiAuthMode.BEARER -> requestBuilder.header("Authorization", "Bearer ${authentication.value}")
+                    ApiAuthMode.NONE -> Unit
                 }
                 chain.proceed(requestBuilder.build())
             }

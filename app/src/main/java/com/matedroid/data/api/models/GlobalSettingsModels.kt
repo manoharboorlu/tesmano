@@ -5,8 +5,9 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class GlobalSettingsResponse(
-    @Json(name = "data") val data: GlobalSettingsData? = null
-)
+    @Json(name = "data") val data: GlobalSettingsData? = null,
+    @Json(name = "error") override val error: String? = null
+) : ApiEnvelope
 
 @JsonClass(generateAdapter = true)
 data class GlobalSettingsData(

@@ -6,8 +6,9 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class CarsResponse(
-    @Json(name = "data") val data: CarsData? = null
-)
+    @Json(name = "data") val data: CarsData? = null,
+    @Json(name = "error") override val error: String? = null
+) : ApiEnvelope
 
 @JsonClass(generateAdapter = true)
 data class CarsData(
@@ -57,8 +58,9 @@ data class CarDetails(
 
 @JsonClass(generateAdapter = true)
 data class CarStatusResponse(
-    @Json(name = "data") val data: CarStatusData? = null
-)
+    @Json(name = "data") val data: CarStatusData? = null,
+    @Json(name = "error") override val error: String? = null
+) : ApiEnvelope
 
 @JsonClass(generateAdapter = true)
 data class CarStatusData(

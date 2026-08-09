@@ -96,6 +96,12 @@ MateDroid performs none. “Edit charge cost” launches the TeslaMate web page 
 
 ## Contract risks and Phase 1 requirements
 
+### Phase 1A implementation
+
+- All consumed API envelopes model the optional HTTP-200 `error` field. Repository mapping converts it to a typed `SERVER_ENVELOPE` failure rather than treating it as missing data.
+- `API-Version` is captured internally from response headers when supplied.
+- Read authentication is a single explicit mode: `NONE`, `BASIC`, or `BEARER`. When legacy settings contain both Basic credentials and a Bearer token, Bearer takes precedence and exactly one `Authorization` header is sent.
+
 1. Preserve timestamps as instants; do not reduce RFC 3339 to `LocalDateTime` at ingestion.
 2. Align models to the actual nested schema and numeric types: `fast_charger_info`, `rated_range`, current/added range, range names without `_km`, usable battery fields, and floating-point status current/power. Today, charger brand/connector aggregates and current-charge range are silently absent.
 3. Read and record `API-Version`; define a supported minimum (v1.24 for current charge, v1.25 preferred for old/null data) and capability-test optional endpoints.

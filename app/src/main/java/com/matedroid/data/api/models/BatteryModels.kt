@@ -5,8 +5,9 @@ import com.squareup.moshi.JsonClass
 
 @JsonClass(generateAdapter = true)
 data class BatteryHealthResponse(
-    @Json(name = "data") val data: BatteryHealthData? = null
-)
+    @Json(name = "data") val data: BatteryHealthData? = null,
+    @Json(name = "error") override val error: String? = null
+) : ApiEnvelope
 
 @JsonClass(generateAdapter = true)
 data class BatteryHealthData(
@@ -25,8 +26,9 @@ data class BatteryHealth(
 
 @JsonClass(generateAdapter = true)
 data class UpdatesResponse(
-    @Json(name = "data") val data: UpdatesResponseData? = null
-)
+    @Json(name = "data") val data: UpdatesResponseData? = null,
+    @Json(name = "error") override val error: String? = null
+) : ApiEnvelope
 
 @JsonClass(generateAdapter = true)
 data class UpdatesResponseData(

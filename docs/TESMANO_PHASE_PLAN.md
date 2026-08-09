@@ -15,6 +15,10 @@ The requested phase sequence is retained, with one safety adjustment: Phase 1 es
 
 ## Phase 1 — Correctness foundation
 
+### Phase 1A technical debt
+
+- Timestamp normalization remains deferred: API RFC3339 offsets are still reduced to local wall time in several UI, domain, weather, and Room-adjacent paths. Correcting this safely requires an end-to-end `Instant`/storage migration and range-query review, so it is not being partially changed in Phase 1A.
+
 ### Scope
 
 - Lock the TesMano base to MateDroid `9333a145…`; record future upstream intake explicitly.

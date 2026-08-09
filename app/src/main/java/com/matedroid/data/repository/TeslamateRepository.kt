@@ -3,6 +3,7 @@ package com.matedroid.data.repository
 import android.util.Log
 import com.matedroid.data.api.TeslamateApi
 import com.matedroid.data.api.models.BatteryHealth
+import com.matedroid.data.api.models.ApiEnvelope
 import com.matedroid.data.api.models.CarData
 import com.matedroid.data.api.models.CarStatus
 import com.matedroid.data.api.models.ChargeData
@@ -16,6 +17,8 @@ import com.matedroid.data.local.AppSettings
 import com.matedroid.data.local.SettingsDataStore
 import com.matedroid.di.TeslamateApiFactory
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import com.squareup.moshi.JsonDataException
 import com.squareup.moshi.JsonEncodingException
 import java.net.ConnectException
@@ -26,12 +29,20 @@ import javax.inject.Singleton
 import javax.net.ssl.SSLException
 import retrofit2.Response
 
+enum class ApiFailure {
+    SERVER_ENVELOPE,
+    HTTP,
+    MISSING_DATA,
+    TRANSPORT
+}
+
 sealed class ApiResult<out T> {
     data class Success<T>(val data: T) : ApiResult<T>()
     data class Error(
         val message: String,
         val code: Int? = null,
-        val details: String? = null
+        val details: String? = null,
+        val failure: ApiFailure = ApiFailure.TRANSPORT
     ) : ApiResult<Nothing>()
 }
 
@@ -39,6 +50,18 @@ data class CarStatusWithUnits(
     val status: CarStatus,
     val units: Units
 )
+
+data class ApiCompatibility(val reportedVersion: String? = null)
+
+internal fun <B : ApiEnvelope, T> mapApiEnvelope(
+    body: B?,
+    code: Int,
+    what: String,
+    extract: (B?) -> T?
+): ApiResult<T> = body?.error?.let { error ->
+    ApiResult.Error(error, code, failure = ApiFailure.SERVER_ENVELOPE)
+} ?: extract(body)?.let { ApiResult.Success(it) }
+    ?: ApiResult.Error("No $what returned", code, failure = ApiFailure.MISSING_DATA)
 
 /**
  * Typed outcome of the current-charge endpoint: the server answering
@@ -83,6 +106,13 @@ class TeslamateRepository @Inject constructor(
 
     // Cache: true = endpoint exists (API 1.24+), false = 404 (older API)
     private val currentChargeApiAvailable = mutableMapOf<Int, Boolean>()
+    private val mutableApiCompatibility = MutableStateFlow(ApiCompatibility())
+    val apiCompatibility: StateFlow<ApiCompatibility> = mutableApiCompatibility
+
+    private fun recordApiVersion(response: Response<*>) {
+        val version = response.headers()["API-Version"] ?: response.headers()["Api-Version"]
+        if (!version.isNullOrBlank()) mutableApiCompatibility.value = ApiCompatibility(version)
+    }
 
     /**
      * Check whether the current charge endpoint is available for the given car.
@@ -94,6 +124,7 @@ class TeslamateRepository @Inject constructor(
         currentChargeApiAvailable[carId]?.let { return it }
         val result = executeWithFallback { api ->
             val response = api.getCurrentCharge(carId)
+            recordApiVersion(response)
             if (response.code() == 200) ApiResult.Success(true)
             else ApiResult.Error("Not available", response.code())
         }
@@ -203,6 +234,7 @@ class TeslamateRepository @Inject constructor(
         return try {
             val api = apiFactory.create(serverUrl, acceptInvalidCerts)
             val response = api.ping()
+            recordApiVersion(response)
             if (response.isSuccessful) {
                 ApiResult.Success(Unit)
             } else {
@@ -224,16 +256,17 @@ class TeslamateRepository @Inject constructor(
      * Any thrown exception propagates to [executeWithFallback], which owns the
      * network-error / secondary-server handling.
      */
-    private inline fun <B, T> Response<B>.toResult(
+    private fun <B : ApiEnvelope, T> Response<B>.toResult(
         what: String,
         extract: (B?) -> T?
-    ): ApiResult<T> =
-        if (isSuccessful) {
-            extract(body())?.let { ApiResult.Success(it) }
-                ?: ApiResult.Error("No $what returned")
+    ): ApiResult<T> {
+        recordApiVersion(this)
+        return if (isSuccessful) {
+            mapApiEnvelope(body(), code(), what, extract)
         } else {
-            ApiResult.Error("Failed to fetch $what: ${code()}", code())
+            ApiResult.Error("Failed to fetch $what: ${code()}", code(), failure = ApiFailure.HTTP)
         }
+    }
 
     suspend fun getCars(): ApiResult<List<CarData>> =
         executeWithFallback { api -> api.getCars().toResult("cars") { it?.data?.cars ?: emptyList() } }

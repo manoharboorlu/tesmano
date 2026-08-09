@@ -103,9 +103,6 @@ object CarImageResolver {
     // Note: "helix19" from TeslamateAPI is actually Nova 19" wheel
     private val HIGHLAND_M3_WHEEL_TYPES = setOf("photon18", "glider18", "nova18", "nova19", "helix19", "w38a")
 
-    // Wheel types only available on Juniper Model Y (normalized, lowercase)
-    private val JUNIPER_MY_WHEEL_TYPES = setOf("photon18", "wy18p", "crossflow19", "wy19p", "helix20", "wy20a")
-
     // Legacy Model 3 valid colors
     private val LEGACY_M3_COLORS = setOf("PBSB", "PMNG", "PMSS", "PPSW", "PPSB", "PPMR", "PMBL")
 
@@ -367,6 +364,7 @@ object CarImageResolver {
         trimBadging: String?
     ): String {
         val baseModel = model?.uppercase() ?: "3"
+        val appearance = VehicleAppearanceResolver.resolve(model, colorCode, wheelType, trimBadging)
         val isHighlandJuniperColor = colorCode in HIGHLAND_JUNIPER_COLORS
 
         // Normalize wheel type for checking
@@ -374,16 +372,16 @@ object CarImageResolver {
 
         // Check if wheel type indicates Highland/Juniper
         val isHighlandM3Wheel = normalizedWheel != null && HIGHLAND_M3_WHEEL_TYPES.any { normalizedWheel.startsWith(it) }
-        val isJuniperMYWheel = normalizedWheel != null && JUNIPER_MY_WHEEL_TYPES.any { normalizedWheel.startsWith(it) }
 
         // Check for Performance trim (P prefix like "P74D")
-        val isPerformance = trimBadging?.uppercase()?.startsWith("P") == true ||
+        val isPerformance = if (baseModel == "Y") {
+            appearance.trim == VehicleTrim.PERFORMANCE
+        } else {
+            trimBadging?.uppercase()?.startsWith("P") == true ||
                 trimBadging?.lowercase()?.contains("performance") == true
+        }
 
-        // Check for 21" Überturbine/Arachnid wheels (Performance-only on Juniper)
-        val isJuniperPerfWheel = normalizedWheel?.startsWith("uberturbine21") == true ||
-                normalizedWheel?.startsWith("arachnid21") == true ||
-                normalizedWheel?.startsWith("21") == true
+        val hasJuniperGenerationEvidence = appearance.generation == VehicleGeneration.JUNIPER
 
         // Check for Juniper Standard indicators
         val isJuniperStandard = trimBadging?.uppercase() == "50"
@@ -396,12 +394,13 @@ object CarImageResolver {
                 else -> "m3"
             }
             "Y" -> when {
-                // Juniper Performance: P-trim or 21" wheels with Juniper indicators
-                (isHighlandJuniperColor || isJuniperMYWheel || isJuniperPerfWheel) && (isPerformance || isJuniperPerfWheel) -> "myjp"
+                // PN01, P74D, and Uberturbine21 are cross-generation signals. Only
+                // generation-specific color or wheel evidence can select a Juniper body.
+                hasJuniperGenerationEvidence && isPerformance -> "myjp"
                 // Juniper Standard: trim "50" or Photon18 wheel (Standard-exclusive)
-                (isHighlandJuniperColor || isJuniperMYWheel) && (isJuniperStandard || isPhoton18Wheel) -> "myjs"
+                hasJuniperGenerationEvidence && (isJuniperStandard || isPhoton18Wheel) -> "myjs"
                 // Juniper Premium: other Juniper indicators without Standard/Performance markers
-                isHighlandJuniperColor || isJuniperMYWheel -> "myj"
+                hasJuniperGenerationEvidence -> "myj"
                 else -> "my"
             }
             "S" -> "ms"
@@ -415,6 +414,9 @@ object CarImageResolver {
      * Returns the color if valid, or a fallback color if not.
      */
     fun validateColorForVariant(modelVariant: String, colorCode: String): String {
+        // PN01 is not proof of Juniper. Until a native legacy PN01 asset exists, use the
+        // bundled dark-grey legacy Model Y image rather than switching generation.
+        if (modelVariant == "my" && colorCode == "PN01") return "PMNG"
         val validColors = when (modelVariant) {
             "m3" -> LEGACY_M3_COLORS
             "m3h", "m3hp" -> HIGHLAND_M3_COLORS
@@ -626,7 +628,14 @@ object CarImageResolver {
                     isLegacyOnlyColor || isMyLegacyOnly -> listOf(myLegacy)
                     // Premium-only colors: gen known, no Performance needed
                     isPremiumOnlyColor -> listOf(myPremium)
-                    // Other Juniper-only colors (PN01, PX02): Standard + Premium, no Performance
+                    // PN01 is cross-generation. Keep Legacy selectable for authoritative
+                    // manual overrides instead of allowing auto-detection to reject it.
+                    colorCode == "PN01" -> if (showPerformance) {
+                        listOf(myLegacy, myStandard, myPremium, myPerformance)
+                    } else {
+                        listOf(myLegacy, myStandard, myPremium)
+                    }
+                    // Other Juniper-only colors: Standard + Premium, no Performance
                     isNewOnlyColor -> listOf(myStandard, myPremium)
                     // Shared colors (PPSW, null): cross-gen ambiguity, show all
                     // Performance only if trim/wheel don't rule it out

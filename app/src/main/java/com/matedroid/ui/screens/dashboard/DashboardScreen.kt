@@ -957,17 +957,12 @@ private fun CarImage(
 ) {
     val context = LocalContext.current
 
-    // Use override if set and valid for current car config, otherwise auto-detect
+    // A manual override is authoritative; automatic evidence must not invalidate it.
     val colorCode = remember(carExterior) { CarImageResolver.mapColor(carExterior?.exteriorColor) }
-    val isOverrideValid = remember(carModel, colorCode, carTrimBadging, carExterior, imageOverride) {
-        if (imageOverride == null) false
-        else CarImageResolver.getVariantsForModel(
-            carModel, colorCode, carTrimBadging, carExterior?.wheelType
-        ).any { it.id == imageOverride.variant }
-    }
+    val hasOverride = imageOverride != null
 
-    val assetPath = remember(carModel, carTrimBadging, carExterior, imageOverride, isOverrideValid) {
-        if (imageOverride != null && isOverrideValid) {
+    val assetPath = remember(carModel, carTrimBadging, carExterior, imageOverride, hasOverride) {
+        if (imageOverride != null) {
             CarImageResolver.getAssetPathForOverride(
                 variant = imageOverride.variant,
                 colorCode = colorCode,
@@ -983,8 +978,8 @@ private fun CarImage(
         }
     }
 
-    val scaleFactor = remember(carModel, carTrimBadging, carExterior, imageOverride, isOverrideValid) {
-        if (imageOverride != null && isOverrideValid) {
+    val scaleFactor = remember(carModel, carTrimBadging, carExterior, imageOverride, hasOverride) {
+        if (imageOverride != null) {
             CarImageResolver.getScaleFactorForVariant(imageOverride.variant)
         } else {
             CarImageResolver.getScaleFactor(
