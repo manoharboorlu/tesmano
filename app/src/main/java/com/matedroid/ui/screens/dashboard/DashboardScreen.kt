@@ -896,7 +896,8 @@ private fun CarImage(
             CarImageResolver.getAssetPathForOverride(
                 variant = imageOverride.variant,
                 colorCode = colorCode,
-                wheelCode = imageOverride.wheelCode
+                wheelCode = imageOverride.wheelCode,
+                trimBadging = carTrimBadging
             )
         } else {
             CarImageResolver.getAssetPath(
@@ -927,9 +928,16 @@ private fun CarImage(
                 BitmapFactory.decodeStream(inputStream)
             }
         } catch (e: Exception) {
-            // Try fallback to default
+            // Keep a missing preferred custom asset on the legacy dark-Gemini fallback.
             try {
-                val fallbackPath = CarImageResolver.getDefaultAssetPath(carModel)
+                val fallbackPath = CarImageResolver.getFallbackAssetPath(
+                    model = carModel,
+                    exteriorColor = carExterior?.exteriorColor,
+                    wheelType = carExterior?.wheelType,
+                    trimBadging = carTrimBadging
+                ) { candidate ->
+                    runCatching { context.assets.open(candidate).close() }.isSuccess
+                }
                 context.assets.open(fallbackPath).use { inputStream ->
                     BitmapFactory.decodeStream(inputStream)
                 }

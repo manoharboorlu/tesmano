@@ -873,7 +873,12 @@ class CarWidget : GlanceAppWidget() {
                 runCatching { context.assets.open(candidate).close() }.isSuccess
             }
         } else if (overrideVariant != null && overrideWheel != null) {
-            CarImageResolver.getAssetPathForOverride(overrideVariant, colorCode, overrideWheel)
+            CarImageResolver.getAssetPathForOverride(
+                variant = overrideVariant,
+                colorCode = colorCode,
+                wheelCode = overrideWheel,
+                trimBadging = trimBadging
+            )
         } else {
             CarImageResolver.getAssetPath(model, exteriorColor, wheelType, trimBadging)
         }
@@ -881,7 +886,14 @@ class CarWidget : GlanceAppWidget() {
             context.assets.open(assetPath).use { BitmapFactory.decodeStream(it) }
         } catch (_: IOException) {
             try {
-                val fallback = CarImageResolver.getDefaultAssetPath(model)
+                val fallback = CarImageResolver.getFallbackAssetPath(
+                    model = model,
+                    exteriorColor = exteriorColor,
+                    wheelType = wheelType,
+                    trimBadging = trimBadging
+                ) { candidate ->
+                    runCatching { context.assets.open(candidate).close() }.isSuccess
+                }
                 context.assets.open(fallback).use { BitmapFactory.decodeStream(it) }
             } catch (_: IOException) {
                 null

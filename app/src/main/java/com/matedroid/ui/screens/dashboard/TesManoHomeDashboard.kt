@@ -473,7 +473,8 @@ private fun TesManoVehicleImage(
             imageOverride != null -> CarImageResolver.getAssetPathForOverride(
                 variant = imageOverride.variant,
                 colorCode = CarImageResolver.mapColor(carExterior?.exteriorColor),
-                wheelCode = imageOverride.wheelCode
+                wheelCode = imageOverride.wheelCode,
+                trimBadging = carTrimBadging
             )
             else -> CarImageResolver.getAssetPath(
                 model = carModel,

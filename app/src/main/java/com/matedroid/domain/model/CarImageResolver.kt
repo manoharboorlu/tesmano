@@ -53,10 +53,17 @@ object CarImageResolver {
      */
     const val LEGACY_MODEL_Y_PERFORMANCE_DARK_GEMINI = "legacy_model_y_performance_dark_gemini"
     private const val LEGACY_DARK_GEMINI_FALLBACK = "car_images/my_PMNG_WY19B.png"
+    private const val LEGACY_MODEL_Y_PERFORMANCE_DARK_GEMINI_ASSET =
+        "car_images/custom/vehicle_custom_legacy_model_y_pn01_dark_gemini.png"
 
     fun getCustomAssetOrFallback(customAssetKey: String, assetExists: (String) -> Boolean): String {
-        val candidate = "car_images/custom/$customAssetKey.png"
+        val candidate = getCustomAssetPath(customAssetKey)
         return if (assetExists(candidate)) candidate else LEGACY_DARK_GEMINI_FALLBACK
+    }
+
+    private fun getCustomAssetPath(customAssetKey: String): String = when (customAssetKey) {
+        LEGACY_MODEL_Y_PERFORMANCE_DARK_GEMINI -> LEGACY_MODEL_Y_PERFORMANCE_DARK_GEMINI_ASSET
+        else -> "car_images/custom/$customAssetKey.png"
     }
 
     // Color code mappings (TeslamateAPI -> Compositor)
@@ -272,6 +279,21 @@ object CarImageResolver {
     ): String {
         val colorCode = mapColor(exteriorColor)
         val modelVariant = determineModelVariant(model, colorCode, wheelType, trimBadging)
+
+        // This is a vehicle-configuration match, not a user-specific override. The bundled
+        // illustration is preferred only when all known independent dimensions match the
+        // legacy PN01 Performance car on dark Gemini wheels. Other Model Ys retain normal
+        // automatic resolution, and a missing illustration still reaches the legacy fallback.
+        if (
+            modelVariant == "my" &&
+            // TeslaMate may still report the legacy PMNG compositor proxy for PN01. Both
+            // values identify this visual only with the independent Performance/Gemini data.
+            colorCode in setOf("PN01", "PMNG") &&
+            trimBadging?.uppercase()?.startsWith("P") == true &&
+            (mapWheel(modelVariant, wheelType) ?: DEFAULT_WHEELS[modelVariant]) == "WY19B"
+        ) {
+            return LEGACY_MODEL_Y_PERFORMANCE_DARK_GEMINI_ASSET
+        }
         val resolvedColorCode = colorCode ?: DEFAULT_COLORS[modelVariant] ?: "PPSW"
         val wheelCode = mapWheel(modelVariant, wheelType) ?: DEFAULT_WHEELS[modelVariant] ?: "W38B"
 
@@ -338,6 +360,9 @@ object CarImageResolver {
         // Try exact match first
         val exactPath = getAssetPath(model, exteriorColor, wheelType, trimBadging)
         if (assetExists(exactPath)) return exactPath
+        if (exactPath == LEGACY_MODEL_Y_PERFORMANCE_DARK_GEMINI_ASSET) {
+            return LEGACY_DARK_GEMINI_FALLBACK
+        }
 
         // Try with default wheel
         val colorCode = mapColor(exteriorColor)
@@ -726,7 +751,20 @@ object CarImageResolver {
      * @param wheelCode The wheel code
      * @return The asset path for the selected configuration
      */
-    fun getAssetPathForOverride(variant: String, colorCode: String?, wheelCode: String): String {
+    fun getAssetPathForOverride(
+        variant: String,
+        colorCode: String?,
+        wheelCode: String,
+        trimBadging: String? = null
+    ): String {
+        if (
+            variant == "my" &&
+            colorCode in setOf("PN01", "PMNG") &&
+            wheelCode == "WY19B" &&
+            trimBadging?.uppercase()?.startsWith("P") == true
+        ) {
+            return LEGACY_MODEL_Y_PERFORMANCE_DARK_GEMINI_ASSET
+        }
         val color = colorCode ?: DEFAULT_COLORS[variant] ?: "PPSW"
         val validatedColor = validateColorForVariant(variant, color)
         return "car_images/${variant}_${validatedColor}_${wheelCode}.png"

@@ -6,4 +6,4 @@ Automatic detection is conservative. PN01, P74D, and Uberturbine21 do not establ
 
 For an ambiguous Model Y, the image resolver keeps the legacy body fallback. The current PN01/P74D/Gemini fallback uses the bundled legacy dark-grey Gemini asset (`my_PMNG_WY19B.png`) until a native legacy PN01 compositor asset is added; it never chooses a Juniper body just to display Performance details.
 
-Phase 1C reserves `legacy_model_y_performance_dark_gemini` as the stable key for a custom bundled legacy Model Y Performance illustration. When that artwork is unavailable, the shared Dashboard/widget resolver returns `my_PMNG_WY19B.png`; custom artwork never causes a Juniper fallback.
+`legacy_model_y_performance_dark_gemini` is the stable key for the bundled legacy Model Y Performance illustration at `car_images/custom/vehicle_custom_legacy_model_y_pn01_dark_gemini.png`. The shared Dashboard/widget resolver prefers it only for the legacy PN01 (or TeslaMate's PMNG proxy), Performance, dark-Gemini configuration. If the custom asset is unavailable, it returns `my_PMNG_WY19B.png`; custom artwork never causes a Juniper fallback.

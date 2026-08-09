@@ -41,10 +41,34 @@ class CarImageResolverTest {
     }
 
     @Test
-    fun `PN01 P74D and Gemini resolve to a conservative legacy dark Gemini fallback`() {
+    fun `exact legacy PN01 Performance dark Gemini configuration prefers the custom asset`() {
+        assertEquals(
+            "car_images/custom/vehicle_custom_legacy_model_y_pn01_dark_gemini.png",
+            CarImageResolver.getAssetPath("Y", "StealthGrey", "Gemini19", "P74D")
+        )
+    }
+
+    @Test
+    fun `legacy PMNG proxy resolves the custom asset only with Performance and Gemini evidence`() {
+        assertEquals(
+            "car_images/custom/vehicle_custom_legacy_model_y_pn01_dark_gemini.png",
+            CarImageResolver.getAssetPath("Y", "MidnightSilver", "Gemini19", "P74D")
+        )
         assertEquals(
             "car_images/my_PMNG_WY19B.png",
-            CarImageResolver.getAssetPath("Y", "StealthGrey", "Gemini19", "P74D")
+            CarImageResolver.getAssetPath("Y", "MidnightSilver", "Gemini19", "74D")
+        )
+        assertEquals(
+            "car_images/custom/vehicle_custom_legacy_model_y_pn01_dark_gemini.png",
+            CarImageResolver.getAssetPath("Y", "MidnightSilver", "Gemini", "P74D")
+        )
+    }
+
+    @Test
+    fun `missing preferred custom asset retains the correct legacy dark Gemini fallback`() {
+        assertEquals(
+            "car_images/my_PMNG_WY19B.png",
+            CarImageResolver.getFallbackAssetPath("Y", "StealthGrey", "Gemini19", "P74D") { false }
         )
     }
 
@@ -89,8 +113,15 @@ class CarImageResolverTest {
     }
 
     @Test
-    fun `manual legacy PN01 override remains authoritative`() {
-        assertEquals("car_images/my_PMNG_WY19B.png", CarImageResolver.getAssetPathForOverride("my", "PN01", "WY19B"))
+    fun `manual legacy PN01 dark Gemini override uses the preferred custom asset`() {
+        assertEquals(
+            "car_images/custom/vehicle_custom_legacy_model_y_pn01_dark_gemini.png",
+            CarImageResolver.getAssetPathForOverride("my", "PN01", "WY19B", "P74D")
+        )
+        assertEquals(
+            "car_images/my_PMNG_WY19B.png",
+            CarImageResolver.getAssetPathForOverride("my", "PMNG", "WY19B", "74D")
+        )
     }
 
     @Test
