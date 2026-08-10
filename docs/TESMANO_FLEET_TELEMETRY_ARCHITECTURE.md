@@ -1,10 +1,30 @@
 # TesMano Fleet Telemetry Sidecar Architecture (T0 spike)
 
-Status: **design only, not implemented, not deployed, not authorized for implementation.**
+Status: **design only, not deployed, not authorized to run against a real vehicle.**
 This document proposes the architecture for a future, separately-authorized project to
 historically retain Tesla Fleet Telemetry data for TesMano's one vehicle (Night Fury). It does
 not change TeslaMate, TeslaMateApi, PostgreSQL, Oracle infrastructure, or any Android production
 code, and does not use the Tesla Fleet API today.
+
+### T0.1 implementation note
+
+A minimal, fixture-tested skeleton of the ingest → SQLite → read API path now exists locally at
+`telemetry-sidecar/` (Go, `modernc.org/sqlite`, no cgo). It proves the data path only — no real
+Tesla credentials, no Vehicle Command Proxy, no deployment. Two deltas from the schema/API sketch
+below, kept because they simplify the skeleton without losing anything:
+
+- `telemetry_signal`/`telemetry_location` key on **`vin TEXT`**, not `vehicle_id INTEGER` — the
+  sidecar has no vehicle-registry table yet, and VIN is already the natural identifier Tesla
+  sends on every record. Add an integer surrogate key later only if a real need (e.g. joining
+  against a multi-vehicle registry) appears.
+- Both tables also carry **`received_at`**, distinct from the telemetry `ts`, per T0.1's minimum
+  raw model (`timestamp`, `vehicle/VIN`, `signal`, `typed value`, `received_at`).
+- The read API's actual shape is `GET /api/v1/signals/latest?signal=...&vin=...` and
+  `GET /api/v1/signals/history?signal=...&vin=...&from=...&to=...&limit=...` (bounded, default
+  500 rows, hard cap 5000) rather than the `/v1/vehicles/{id}/signals` sketch — same intent,
+  VIN-scoped instead of vehicle-id-scoped for the reason above.
+
+See `telemetry-sidecar/README.md` for exact run commands.
 
 ## Why this exists
 

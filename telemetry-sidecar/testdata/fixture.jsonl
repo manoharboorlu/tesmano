@@ -1,0 +1,5 @@
+{"Vin":"5YJYGDEE1LF000001","CreatedAt":"2026-08-10T09:00:00Z","ModuleTempMin":{"doubleValue":24.5},"ModuleTempMax":{"doubleValue":29.1},"Soc":{"doubleValue":72},"PackVoltage":{"doubleValue":358.2},"PackCurrent":{"doubleValue":-12.4},"PreconditioningEnabled":{"booleanValue":false}}
+{"Vin":"5YJYGDEE1LF000001","CreatedAt":"2026-08-10T09:05:00Z","ModuleTempMin":{"doubleValue":24.8},"ModuleTempMax":{"doubleValue":29.6},"Soc":{"doubleValue":71},"PackVoltage":{"doubleValue":357.9},"PackCurrent":{"doubleValue":-13.1}}
+{"Vin":"5YJYGDEE1LF000001","CreatedAt":"2026-08-10T09:10:00Z","ModuleTempMin":{"doubleValue":25.1},"ModuleTempMax":{"doubleValue":30.0},"Soc":{"doubleValue":70},"Location":{"locationValue":{"latitude":37.7749,"longitude":-122.4194}}}
+{"Vin":"5YJYGDEE1LF000001","CreatedAt":"2026-08-10T09:15:00Z","ModuleTempMin":{"doubleValue":25.3},"ModuleTempMax":{"doubleValue":30.2},"DetailedChargeState":{"stringValue":"Charging"}}
+{"Vin":"5YJYGDEE1LF000001","CreatedAt":"2026-08-10T09:20:00Z","ModuleTempMin":{"invalid":true},"ModuleTempMax":{"doubleValue":30.4}}
