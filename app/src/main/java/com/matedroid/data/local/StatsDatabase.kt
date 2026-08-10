@@ -13,6 +13,7 @@ import com.matedroid.data.local.dao.GeocodeQueueDao
 import com.matedroid.data.local.dao.SavedTripDao
 import com.matedroid.data.local.dao.SentryAlertLogDao
 import com.matedroid.data.local.dao.SyncStateDao
+import com.matedroid.data.local.dao.SmartPlacesDao
 import com.matedroid.data.local.dao.TripCountryCacheDao
 import com.matedroid.data.local.dao.TripRouteCacheDao
 import com.matedroid.data.local.entity.ChargeDetailAggregate
@@ -27,6 +28,9 @@ import com.matedroid.data.local.entity.SavedTripConsumedFingerprint
 import com.matedroid.data.local.entity.SavedTripLeg
 import com.matedroid.data.local.entity.SentryAlertLog
 import com.matedroid.data.local.entity.SyncState
+import com.matedroid.data.local.entity.SmartPlace
+import com.matedroid.data.local.entity.DriveEndpointCache
+import com.matedroid.data.local.entity.DriveTagOverride
 import com.matedroid.data.local.entity.TripCountryCache
 import com.matedroid.data.local.entity.TripRouteCache
 
@@ -57,9 +61,12 @@ import com.matedroid.data.local.entity.TripRouteCache
         TripCountryCache::class,
         SavedTrip::class,
         SavedTripLeg::class,
-        SavedTripConsumedFingerprint::class
+        SavedTripConsumedFingerprint::class,
+        SmartPlace::class,
+        DriveEndpointCache::class,
+        DriveTagOverride::class
     ],
-    version = 13,
+    version = 15,
     exportSchema = true
 )
 abstract class StatsDatabase : RoomDatabase() {
@@ -75,6 +82,7 @@ abstract class StatsDatabase : RoomDatabase() {
     abstract fun tripRouteCacheDao(): TripRouteCacheDao
     abstract fun tripCountryCacheDao(): TripCountryCacheDao
     abstract fun savedTripDao(): SavedTripDao
+    abstract fun smartPlacesDao(): SmartPlacesDao
 
     companion object {
         const val DATABASE_NAME = "matedroid_stats.db"
@@ -330,6 +338,54 @@ abstract class StatsDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13)
+        /** Migration from V13 to V14: local Smart Places, endpoint cache, and tag overrides. */
+        val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS smart_places (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        name TEXT NOT NULL,
+                        type TEXT NOT NULL,
+                        latitude REAL NOT NULL,
+                        longitude REAL NOT NULL,
+                        radiusMeters INTEGER NOT NULL,
+                        enabled INTEGER NOT NULL,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_smart_places_type_enabled ON smart_places (type, enabled)")
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS drive_endpoint_cache (
+                        driveId INTEGER PRIMARY KEY NOT NULL,
+                        carId INTEGER NOT NULL,
+                        startLatitude REAL,
+                        startLongitude REAL,
+                        endLatitude REAL,
+                        endLongitude REAL,
+                        capturedAt INTEGER NOT NULL
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_drive_endpoint_cache_carId ON drive_endpoint_cache (carId)")
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS drive_tag_overrides (
+                        driveId INTEGER NOT NULL,
+                        tag TEXT NOT NULL,
+                        action TEXT NOT NULL,
+                        updatedAt INTEGER NOT NULL,
+                        PRIMARY KEY (driveId, tag)
+                    )
+                """)
+            }
+        }
+
+        /** Migration from V14 to V15: retain a known endpoint address for place presentation. */
+        val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE smart_places ADD COLUMN address TEXT")
+            }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
     }
 }

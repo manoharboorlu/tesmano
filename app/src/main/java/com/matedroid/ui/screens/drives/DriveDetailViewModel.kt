@@ -13,6 +13,10 @@ import com.matedroid.domain.DriveComparison
 import com.matedroid.domain.DriveComparisonRepository
 import com.matedroid.domain.LegRef
 import com.matedroid.domain.TripRepository
+import com.matedroid.domain.DrivePlaceContext
+import com.matedroid.domain.SmartPlacesRepository
+import com.matedroid.data.local.entity.SmartPlace
+import com.matedroid.domain.GeoPoint
 import com.matedroid.domain.model.Trip
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +35,8 @@ data class DriveDetailUiState(
     val weatherPoints: List<WeatherPoint> = emptyList(),
     val isLoadingWeather: Boolean = false,
     val containingTrip: Pair<Long, Trip>? = null,
-    val comparison: DriveComparison? = null
+    val comparison: DriveComparison? = null,
+    val placeContext: DrivePlaceContext? = null
 )
 
 data class DriveDetailStats(
@@ -62,7 +67,8 @@ class DriveDetailViewModel @Inject constructor(
     private val repository: TeslamateRepository,
     private val weatherRepository: WeatherRepository,
     private val tripRepository: TripRepository,
-    private val driveComparisonRepository: DriveComparisonRepository
+    private val driveComparisonRepository: DriveComparisonRepository,
+    private val smartPlacesRepository: SmartPlacesRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DriveDetailUiState())
@@ -115,6 +121,8 @@ class DriveDetailViewModel @Inject constructor(
                         )
                     }
 
+                    refreshPlaceContext(detail)
+
                     // Fetch weather data in the background
                     loadWeatherData(detail)
                 }
@@ -127,6 +135,57 @@ class DriveDetailViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    private fun refreshPlaceContext(detail: DriveDetail? = _uiState.value.driveDetail) {
+        val currentCarId = carId ?: return
+        val currentDriveId = driveId ?: return
+        viewModelScope.launch {
+            detail?.let { smartPlacesRepository.cacheLoadedDetail(currentCarId, currentDriveId, it) }
+            _uiState.update { it.copy(placeContext = smartPlacesRepository.contextForDrive(currentCarId, currentDriveId)) }
+        }
+    }
+
+    fun markCommute() {
+        val currentDriveId = driveId ?: return
+        viewModelScope.launch {
+            smartPlacesRepository.setCommuteOverride(currentDriveId, assigned = true)
+            refreshPlaceContext()
+        }
+    }
+
+    fun unmarkCommute() {
+        val currentDriveId = driveId ?: return
+        viewModelScope.launch {
+            smartPlacesRepository.setCommuteOverride(currentDriveId, assigned = false)
+            refreshPlaceContext()
+        }
+    }
+
+    fun returnToAutomaticCommute() {
+        val currentDriveId = driveId ?: return
+        viewModelScope.launch {
+            smartPlacesRepository.revertCommuteToAutomatic(currentDriveId)
+            refreshPlaceContext()
+        }
+    }
+
+    fun saveEndpointAsPlace(name: String, type: String, point: GeoPoint, address: String?, radiusMeters: Int = 300) {
+        viewModelScope.launch {
+            smartPlacesRepository.savePlace(
+                SmartPlace(
+                    name = name,
+                    type = type,
+                    latitude = point.latitude,
+                    longitude = point.longitude,
+                    radiusMeters = radiusMeters,
+                    createdAt = System.currentTimeMillis(),
+                    updatedAt = System.currentTimeMillis(),
+                    address = address
+                )
+            )
+            refreshPlaceContext()
         }
     }
 

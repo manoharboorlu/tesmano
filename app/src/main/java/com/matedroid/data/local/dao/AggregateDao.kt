@@ -19,6 +19,12 @@ interface AggregateDao {
     @Query("SELECT * FROM drive_detail_aggregates WHERE carId = :carId")
     suspend fun getDriveAggregatesForCar(carId: Int): List<DriveDetailAggregate>
 
+    @Query("SELECT * FROM drive_detail_aggregates WHERE carId = :carId AND driveId = :driveId LIMIT 1")
+    suspend fun getDriveAggregate(carId: Int, driveId: Int): DriveDetailAggregate?
+
+    @Query("SELECT * FROM drive_detail_aggregates WHERE carId = :carId AND driveId IN (:driveIds)")
+    suspend fun getDriveAggregates(carId: Int, driveIds: List<Int>): List<DriveDetailAggregate>
+
     @Query("DELETE FROM drive_detail_aggregates WHERE carId = :carId")
     suspend fun deleteDriveAggregatesForCar(carId: Int)
 

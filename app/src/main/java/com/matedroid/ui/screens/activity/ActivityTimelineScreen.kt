@@ -50,6 +50,7 @@ import com.matedroid.R
 import com.matedroid.data.api.models.Units
 import com.matedroid.data.local.entity.ChargeSummary
 import com.matedroid.data.local.entity.DriveSummary
+import com.matedroid.domain.DrivePlaceContext
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
 import com.matedroid.util.formatDurationCompact
@@ -142,6 +143,7 @@ fun ActivityTimelineScreen(
                                     is TimelineRow.EntryRow -> ActivityRow(
                                         entry = row.entry,
                                         units = uiState.units,
+                                        placeContext = (row.entry as? ActivityEntry.Drive)?.let { uiState.drivePlaces[it.id] },
                                         onClick = {
                                             when (val entry = row.entry) {
                                                 is ActivityEntry.Drive -> onNavigateToDriveDetail(entry.id)
@@ -251,7 +253,7 @@ private fun DateHeader(date: LocalDate?) {
 }
 
 @Composable
-private fun ActivityRow(entry: ActivityEntry, units: Units?, onClick: () -> Unit) {
+private fun ActivityRow(entry: ActivityEntry, units: Units?, placeContext: DrivePlaceContext?, onClick: () -> Unit) {
     val context = LocalContext.current
     val time = entry.localStart()?.let { local ->
         val start = DateFormat.getTimeFormat(context).format(java.util.Date(local.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
@@ -261,7 +263,7 @@ private fun ActivityRow(entry: ActivityEntry, units: Units?, onClick: () -> Unit
         if (end == null || start == end) start else "$start – $end"
     } ?: stringResource(R.string.unknown)
     val (label, icon, headline, details) = when (entry) {
-        is ActivityEntry.Drive -> driveRowContent(entry.summary, units)
+        is ActivityEntry.Drive -> driveRowContent(entry.summary, units, placeContext)
         is ActivityEntry.Charge -> chargeRowContent(entry.summary)
     }
     Row(
@@ -291,15 +293,16 @@ private fun ActivityRow(entry: ActivityEntry, units: Units?, onClick: () -> Unit
 }
 
 @Composable
-private fun driveRowContent(summary: DriveSummary, units: Units?): TimelineContent {
+private fun driveRowContent(summary: DriveSummary, units: Units?, placeContext: DrivePlaceContext?): TimelineContent {
     val unknown = stringResource(R.string.activity_unknown_location)
-    val start = summary.startAddress.ifBlank { unknown }
-    val end = summary.endAddress.ifBlank { unknown }
+    val start = placeContext?.start?.name ?: summary.startAddress.ifBlank { unknown }
+    val end = placeContext?.end?.name ?: summary.endAddress.ifBlank { unknown }
     val details = buildList {
         if (summary.distance > 0) add(UnitFormatter.formatDistance(summary.distance, units))
         if (summary.durationMin > 0) add(formatDurationCompact(summary.durationMin))
         summary.efficiency?.takeIf { it > 0 && summary.distance >= 1 }?.let { add(UnitFormatter.formatEfficiency(it, units, 0)) }
         summary.energyConsumed?.takeIf { it >= 0.5 }?.let { add(UnitFormatter.formatEnergy(it)) }
+        if (placeContext?.commute == true) add("Commute")
     }
     return TimelineContent(stringResource(R.string.activity_drive), Icons.Filled.DirectionsCar, "$start → $end", details)
 }

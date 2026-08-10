@@ -40,6 +40,9 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -85,6 +88,9 @@ import com.matedroid.data.api.models.DrivePosition
 import com.matedroid.data.api.models.Units
 import com.matedroid.data.repository.WeatherPoint
 import com.matedroid.domain.DriveComparison
+import com.matedroid.domain.DrivePlaceContext
+import com.matedroid.domain.GeoPoint as TesManoGeoPoint
+import com.matedroid.data.local.entity.SmartPlaceType
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.components.FullscreenLineChart
 import com.matedroid.ui.components.MateDroidLoadingPlaceholder
@@ -167,9 +173,14 @@ fun DriveDetailScreen(
                     isLoadingWeather = uiState.isLoadingWeather,
                     containingTrip = uiState.containingTrip,
                     comparison = uiState.comparison,
+                    placeContext = uiState.placeContext,
                     onCompareClick = { onNavigateToCompare(driveId) },
                     onNavigateToTripDetail = onNavigateToTripDetail,
                     onRemoveFromTrip = viewModel::removeFromTrip,
+                    onMarkCommute = viewModel::markCommute,
+                    onUnmarkCommute = viewModel::unmarkCommute,
+                    onReturnToAutomatic = viewModel::returnToAutomaticCommute,
+                    onSaveEndpoint = viewModel::saveEndpointAsPlace,
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -187,15 +198,21 @@ private fun DriveDetailContent(
     isLoadingWeather: Boolean,
     containingTrip: Pair<Long, com.matedroid.domain.model.Trip>?,
     comparison: DriveComparison?,
+    placeContext: DrivePlaceContext?,
     onCompareClick: () -> Unit,
     onNavigateToTripDetail: (String) -> Unit,
     onRemoveFromTrip: () -> Unit,
+    onMarkCommute: () -> Unit,
+    onUnmarkCommute: () -> Unit,
+    onReturnToAutomatic: () -> Unit,
+    onSaveEndpoint: (String, String, TesManoGeoPoint, String?, Int) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val is24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
     val adaptive = LocalAdaptiveLayoutInfo.current
     val scrollState = rememberScrollState()
     var sharedXFraction by remember { mutableStateOf<Float?>(null) }
+    var endpointToSave by remember { mutableStateOf<Pair<String, TesManoGeoPoint>?>(null) }
 
     LaunchedEffect(scrollState) {
         snapshotFlow { scrollState.isScrollInProgress }
@@ -226,6 +243,15 @@ private fun DriveDetailContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        DrivePlacesCard(
+            detail = detail,
+            context = placeContext,
+            onMarkCommute = onMarkCommute,
+            onUnmarkCommute = onUnmarkCommute,
+            onReturnToAutomatic = onReturnToAutomatic,
+            onSaveStart = { point -> endpointToSave = "Start" to point },
+            onSaveEnd = { point -> endpointToSave = "Destination" to point }
+        )
         if (adaptive.supportsTwoPane) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -312,6 +338,75 @@ private fun DriveDetailContent(
 
         Spacer(modifier = Modifier.height(16.dp))
     }
+
+    endpointToSave?.let { (label, point) ->
+        SavePlaceDialog(
+            label = label,
+            onDismiss = { endpointToSave = null },
+            onSave = { name, type ->
+                val address = if (label == "Start") detail.startAddress else detail.endAddress
+                onSaveEndpoint(name, type, point, address, 300)
+                endpointToSave = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun DrivePlacesCard(
+    detail: DriveDetail,
+    context: DrivePlaceContext?,
+    onMarkCommute: () -> Unit,
+    onUnmarkCommute: () -> Unit,
+    onReturnToAutomatic: () -> Unit,
+    onSaveStart: (TesManoGeoPoint) -> Unit,
+    onSaveEnd: (TesManoGeoPoint) -> Unit
+) {
+    val points = detail.positions.orEmpty().mapNotNull { position ->
+        position.latitude?.let { latitude -> position.longitude?.let { longitude -> TesManoGeoPoint(latitude, longitude) } }
+    }
+    if (points.isEmpty()) return
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(20.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("SMART PLACES", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = PerformanceRed)
+            Text("${context?.start?.name ?: detail.startAddress ?: "Unknown"}  →  ${context?.end?.name ?: detail.endAddress ?: "Unknown"}", style = MaterialTheme.typography.bodyMedium)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (context?.commute == true) {
+                    Button(onClick = onUnmarkCommute) { Text("Unmark commute") }
+                } else {
+                    Button(onClick = onMarkCommute) { Text("Mark commute") }
+                }
+                if (context?.commuteIsManual == true) TextButton(onClick = onReturnToAutomatic) { Text("Use automatic") }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = { onSaveStart(points.first()) }) { Text("Save start as place") }
+                TextButton(onClick = { onSaveEnd(points.last()) }) { Text("Save destination as place") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SavePlaceDialog(label: String, onDismiss: () -> Unit, onSave: (String, String) -> Unit) {
+    var name by rememberSaveable { mutableStateOf(label) }
+    var type by rememberSaveable { mutableStateOf(SmartPlaceType.CUSTOM) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Save $label as place") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                androidx.compose.material3.OutlinedTextField(name, { name = it }, label = { Text("Place name") })
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    SmartPlaceType.all.forEach { candidate ->
+                        androidx.compose.material3.FilterChip(selected = type == candidate, onClick = { type = candidate }, label = { Text(candidate.lowercase().replaceFirstChar { it.uppercase() }) })
+                    }
+                }
+                Text("You can adjust the 300 m radius in Smart Places.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        },
+        confirmButton = { TextButton(enabled = name.isNotBlank(), onClick = { onSave(name, type) }) { Text("Save") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } }
+    )
 }
 
 @Composable

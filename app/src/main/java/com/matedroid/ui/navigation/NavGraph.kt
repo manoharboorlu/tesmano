@@ -33,6 +33,7 @@ import com.matedroid.ui.screens.drives.DriveDetailScreen
 import com.matedroid.ui.screens.drives.DrivesScreen
 import com.matedroid.ui.screens.mileage.MileageScreen
 import com.matedroid.ui.screens.settings.SettingsScreen
+import com.matedroid.ui.screens.places.SmartPlacesScreen
 import com.matedroid.ui.screens.stats.CountriesVisitedScreen
 import com.matedroid.ui.screens.stats.RegionsVisitedScreen
 import com.matedroid.ui.screens.stats.StatsScreen
@@ -57,6 +58,9 @@ import kotlinx.serialization.Serializable
 sealed interface Screen {
     @Serializable
     data object Settings : Screen
+
+    @Serializable
+    data object SmartPlaces : Screen
 
     @Serializable
     data object Dashboard : Screen
@@ -211,8 +215,15 @@ fun NavGraph(
                 },
                 onNavigateToPalettePreview = {
                     navController.navigate(Screen.PalettePreview)
+                },
+                onNavigateToSmartPlaces = {
+                    navController.navigate(Screen.SmartPlaces)
                 }
             )
+        }
+
+        composable<Screen.SmartPlaces> {
+            SmartPlacesScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable<Screen.Dashboard> {

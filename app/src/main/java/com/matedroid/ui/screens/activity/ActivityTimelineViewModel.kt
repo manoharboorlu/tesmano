@@ -20,6 +20,8 @@ import com.matedroid.data.sync.DataSyncWorker
 import com.matedroid.data.sync.SyncManager
 import com.matedroid.domain.model.SyncPhase
 import com.matedroid.domain.model.SyncProgress
+import com.matedroid.domain.DrivePlaceContext
+import com.matedroid.domain.SmartPlacesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
@@ -65,7 +67,8 @@ data class ActivityTimelineUiState(
     val entries: List<ActivityEntry> = emptyList(),
     val hasMore: Boolean = true,
     val units: Units? = null,
-    val syncProgress: SyncProgress? = null
+    val syncProgress: SyncProgress? = null,
+    val drivePlaces: Map<Int, DrivePlaceContext> = emptyMap()
 ) {
     val isSyncing: Boolean
         get() = syncProgress?.phase?.let { it !in setOf(SyncPhase.IDLE, SyncPhase.COMPLETE, SyncPhase.ERROR) } == true
@@ -81,7 +84,8 @@ class ActivityTimelineViewModel @Inject constructor(
     private val driveSummaryDao: DriveSummaryDao,
     private val chargeSummaryDao: ChargeSummaryDao,
     private val teslamateRepository: TeslamateRepository,
-    private val syncManager: SyncManager
+    private val syncManager: SyncManager,
+    private val smartPlacesRepository: SmartPlacesRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ActivityTimelineUiState())
     val uiState: StateFlow<ActivityTimelineUiState> = _uiState.asStateFlow()
@@ -156,11 +160,13 @@ class ActivityTimelineViewModel @Inject constructor(
 
             val nextEntries = pendingEntries.take(PAGE_SIZE)
             pendingEntries.subList(0, nextEntries.size).clear()
+            val drivePlaces = smartPlacesRepository.contextsForDrives(id, nextEntries.filterIsInstance<ActivityEntry.Drive>().map { it.id })
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     isLoadingMore = false,
                     entries = it.entries + nextEntries,
+                    drivePlaces = it.drivePlaces + drivePlaces,
                     hasMore = sourceMayHaveMore || pendingEntries.isNotEmpty()
                 )
             }

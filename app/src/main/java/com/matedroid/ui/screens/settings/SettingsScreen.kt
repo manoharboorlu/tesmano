@@ -87,6 +87,7 @@ import com.matedroid.ui.theme.StatusSuccess
 fun SettingsScreen(
     onNavigateToDashboard: () -> Unit,
     onNavigateToPalettePreview: () -> Unit = {},
+    onNavigateToSmartPlaces: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -132,6 +133,7 @@ fun SettingsScreen(
                 onTestConnection = viewModel::testConnection,
                 onSave = { viewModel.saveSettings(onNavigateToDashboard) },
                 onPalettePreview = onNavigateToPalettePreview,
+                onSmartPlaces = onNavigateToSmartPlaces,
                 onForceResync = viewModel::forceResync,
                 onSimulateTpmsWarning = viewModel::simulateTpmsWarning,
                 onClearTpmsWarning = viewModel::clearTpmsWarning,
@@ -204,6 +206,7 @@ private fun SettingsContent(
     onTestConnection: () -> Unit,
     onSave: () -> Unit,
     onPalettePreview: () -> Unit = {},
+    onSmartPlaces: () -> Unit = {},
     onForceResync: () -> Unit = {},
     onSimulateTpmsWarning: (TirePosition) -> Unit = {},
     onClearTpmsWarning: () -> Unit = {},
@@ -648,6 +651,12 @@ private fun SettingsContent(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedButton(onClick = onSmartPlaces, modifier = Modifier.fillMaxWidth()) {
+            Text("Smart Places")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Test result card
         uiState.testResult?.let { result ->
