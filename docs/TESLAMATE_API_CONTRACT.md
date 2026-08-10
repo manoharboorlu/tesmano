@@ -118,3 +118,11 @@ MateDroid performs none. “Edit charge cost” launches the TeslaMate web page 
 6. Stream or bound detail processing; never require a whole multi-megabyte response and all decoded points to coexist longer than necessary.
 7. Keep read authentication separate from mutation-token semantics and reject ambiguous Basic+Bearer configuration.
 8. Add fixture/contract tests from current v1.25 JSON, including null old records, empty arrays, error envelopes, current-charge unavailable/no-active states, offset timestamps, decimal status values and very large arrays.
+
+# Local charging-cost analytics
+
+TesMano derives charging-cost analytics solely from cached charge summaries, local Smart Places, effective-dated local rates, and local manual overrides; it does not request historical charge details. Period totals are local-calendar current/previous month, current year, or all time. Cost coverage always states priced/free versus unavailable sessions.
+
+Effective $/kWh is weighted: summed eligible session cost divided by the same sessions' cost-basis energy. This may combine coherent grid-reported energy with battery-added fallback and is therefore labelled **Cost-basis energy**, never grid energy. Free sessions with known energy contribute zero cost and their energy; manual total-cost entries without usable energy contribute to spend but not that denominator.
+
+Charging spend/mile is total applicable charging spend divided by cached drive distance in the same period. It is intentionally not presented as exact energy cost per driven mile. Currencies are aggregated only when all priced sessions share one currency; TesMano never performs implicit FX conversion.

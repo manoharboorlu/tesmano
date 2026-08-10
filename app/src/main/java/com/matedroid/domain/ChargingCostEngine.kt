@@ -1,6 +1,7 @@
 package com.matedroid.domain
 
 import com.matedroid.data.api.models.ChargeDetail
+import com.matedroid.data.local.entity.ChargeSummary
 import com.matedroid.data.local.dao.ChargingCostDao
 import com.matedroid.data.local.dao.SmartPlacesDao
 import com.matedroid.data.local.entity.ChargeCostOverride
@@ -31,6 +32,16 @@ data class ChargeCostPresentation(
     val isFree: Boolean = false
 )
 
+/** The common local input for both a detail screen and cached charge-summary analytics. */
+data class ChargeCostInput(
+    val chargeId: Int,
+    val startDate: String?,
+    val latitude: Double?,
+    val longitude: Double?,
+    val energyAdded: Double?,
+    val energyUsed: Double?
+)
+
 object ChargeCostEngine {
     private val MICRO = BigDecimal(1_000_000)
 
@@ -47,6 +58,32 @@ object ChargeCostEngine {
             .multiply(BigDecimal(100))
             .divide(MICRO, 0, RoundingMode.HALF_UP)
             .longValueExact()
+
+    fun presentation(
+        input: ChargeCostInput,
+        rules: List<ChargingRateRule>,
+        places: List<SmartPlace>,
+        override: ChargeCostOverride?
+    ): ChargeCostPresentation {
+        val basis = energyBasis(input.energyAdded, input.energyUsed)
+        val point = input.latitude?.let { lat -> input.longitude?.let { lon -> GeoPoint(lat, lon) } }
+        val place = SmartPlaceMatcher.match(point, places)
+        // Override pricing remains authoritative, while current place matching still supplies useful provenance.
+        if (override != null) return override.toPresentation(basis, place)
+        val sessionTime = input.startDate?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrDefault(Long.MAX_VALUE) }
+            ?: Long.MAX_VALUE
+        val rule = ChargingRateResolver.resolve(rules, place?.id, sessionTime)
+        if (rule == null) return ChargeCostPresentation(null, "USD", place = place, energyBasis = basis)
+        // An explicit free source proves zero cost even when telemetry is unavailable.
+        if (rule.freeCharging) return ChargeCostPresentation(0, rule.currencyCode, basis, rule, place, isFree = true)
+        if (basis == null) return ChargeCostPresentation(null, rule.currencyCode, rate = rule, place = place)
+        return ChargeCostPresentation(estimatedMinorUnits(basis, rule), rule.currencyCode, basis, rule, place)
+    }
+
+    private fun ChargeCostOverride.toPresentation(basis: ChargeCostEnergyBasis?, place: SmartPlace?) = when (mode) {
+        ChargeCostOverrideMode.FREE -> ChargeCostPresentation(0, currencyCode, basis, place = place, isManual = true, isFree = true)
+        else -> ChargeCostPresentation(costMinorUnits, currencyCode, basis, place = place, isManual = true)
+    }
 }
 
 object ChargingRateResolver {
@@ -66,23 +103,22 @@ class ChargingCostRepository @Inject constructor(
 ) {
     fun observeRules(): Flow<List<ChargingRateRule>> = costDao.observeRules()
 
+    fun observeOverrides(): Flow<List<ChargeCostOverride>> = costDao.observeOverrides()
+
     suspend fun costForCharge(detail: ChargeDetail): ChargeCostPresentation {
-        val override = costDao.overrideForCharge(detail.chargeId)
-        if (override != null) return override.toPresentation()
-        val point = detail.latitude?.let { lat -> detail.longitude?.let { lon -> GeoPoint(lat, lon) } }
-        val place = SmartPlaceMatcher.match(point, placesDao.activePlaces())
-        val sessionTime = detail.startDate?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrDefault(Long.MAX_VALUE) } ?: Long.MAX_VALUE
-        val rule = resolveRule(place?.id, sessionTime)
-        if (rule == null) return ChargeCostPresentation(null, "USD", place = place)
-        if (rule.freeCharging) return ChargeCostPresentation(0, rule.currencyCode, rate = rule, place = place, isFree = true)
-        val basis = ChargeCostEngine.energyBasis(detail.chargeEnergyAdded, detail.chargeEnergyUsed)
-            ?: return ChargeCostPresentation(null, rule.currencyCode, rate = rule, place = place)
-        return ChargeCostPresentation(ChargeCostEngine.estimatedMinorUnits(basis, rule), rule.currencyCode, basis, rule, place)
+        return costForInput(
+            ChargeCostInput(detail.chargeId, detail.startDate, detail.latitude, detail.longitude, detail.chargeEnergyAdded, detail.chargeEnergyUsed)
+        )
     }
 
-    private suspend fun resolveRule(placeId: Long?, timestamp: Long): ChargingRateRule? {
-        return ChargingRateResolver.resolve(costDao.activeRules(), placeId, timestamp)
-    }
+    suspend fun costForCharge(summary: ChargeSummary): ChargeCostPresentation = costForInput(summary.toCostInput())
+
+    suspend fun costForInput(input: ChargeCostInput): ChargeCostPresentation = ChargeCostEngine.presentation(
+        input = input,
+        rules = costDao.activeRules(),
+        places = placesDao.activePlaces(),
+        override = costDao.overrideForCharge(input.chargeId)
+    )
 
     suspend fun saveRate(rule: ChargingRateRule): Long {
         val now = System.currentTimeMillis()
@@ -95,8 +131,13 @@ class ChargingCostRepository @Inject constructor(
         costDao.saveOverride(ChargeCostOverride(chargeId, ChargeCostOverrideMode.FREE, null, currencyCode, System.currentTimeMillis()))
     suspend fun useAutomatic(chargeId: Int) = costDao.deleteOverride(chargeId)
 
-    private fun ChargeCostOverride.toPresentation() = when (mode) {
-        ChargeCostOverrideMode.FREE -> ChargeCostPresentation(0, currencyCode, isManual = true, isFree = true)
-        else -> ChargeCostPresentation(costMinorUnits, currencyCode, isManual = true)
-    }
 }
+
+fun ChargeSummary.toCostInput() = ChargeCostInput(
+    chargeId = chargeId,
+    startDate = startDate,
+    latitude = latitude,
+    longitude = longitude,
+    energyAdded = energyAdded,
+    energyUsed = energyUsed
+)

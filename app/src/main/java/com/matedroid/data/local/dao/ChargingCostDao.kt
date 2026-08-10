@@ -25,6 +25,9 @@ interface ChargingCostDao {
     @Query("SELECT * FROM charge_cost_overrides WHERE chargeId = :chargeId")
     suspend fun overrideForCharge(chargeId: Int): ChargeCostOverride?
 
+    @Query("SELECT * FROM charge_cost_overrides")
+    fun observeOverrides(): Flow<List<ChargeCostOverride>>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun saveOverride(override: ChargeCostOverride)
 

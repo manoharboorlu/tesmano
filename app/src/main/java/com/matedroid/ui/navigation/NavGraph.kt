@@ -24,6 +24,7 @@ import com.matedroid.ui.screens.battery.BatteryScreen
 import com.matedroid.ui.screens.activity.ActivityTimelineScreen
 import com.matedroid.ui.screens.charges.ChargeDetailScreen
 import com.matedroid.ui.screens.charges.ChargesScreen
+import com.matedroid.ui.screens.charges.ChargingAnalyticsScreen
 import com.matedroid.ui.screens.charges.CompareChargesScreen
 import com.matedroid.ui.screens.charges.CurrentChargeScreen
 import com.matedroid.ui.screens.dashboard.DashboardScreen
@@ -73,6 +74,9 @@ sealed interface Screen {
 
     @Serializable
     data class Charges(val carId: Int, val exteriorColor: String? = null) : Screen
+
+    @Serializable
+    data class ChargingAnalytics(val carId: Int, val exteriorColor: String? = null) : Screen
 
     @Serializable
     data class ChargeDetail(val carId: Int, val chargeId: Int, val exteriorColor: String? = null) : Screen
@@ -183,6 +187,7 @@ fun NavGraph(
                 val screen: Screen? = when (navigateTo) {
                     "current_charge" -> Screen.CurrentCharge(carId, exteriorColor)
                     "charges" -> Screen.Charges(carId, exteriorColor)
+                    "charging_analytics" -> Screen.ChargingAnalytics(carId, exteriorColor)
                     "drives" -> Screen.Drives(carId, exteriorColor)
                     "activity" -> Screen.Activity(carId, exteriorColor)
                     "mileage" -> Screen.Mileage(carId, exteriorColor)
@@ -250,6 +255,9 @@ fun NavGraph(
                 onNavigateToStats = { carId, exteriorColor ->
                     navController.navigate(Screen.Stats(carId, exteriorColor))
                 },
+                onNavigateToChargingAnalytics = { carId, exteriorColor ->
+                    navController.navigate(Screen.ChargingAnalytics(carId, exteriorColor))
+                },
                 onNavigateToCurrentCharge = { carId, exteriorColor ->
                     navController.navigate(Screen.CurrentCharge(carId, exteriorColor))
                 },
@@ -284,6 +292,17 @@ fun NavGraph(
             ChargesScreen(
                 carId = route.carId,
                 exteriorColor = route.exteriorColor,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToChargeDetail = { chargeId ->
+                    navController.navigate(Screen.ChargeDetail(route.carId, chargeId, route.exteriorColor))
+                }
+            )
+        }
+
+        composable<Screen.ChargingAnalytics> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.ChargingAnalytics>()
+            ChargingAnalyticsScreen(
+                carId = route.carId,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToChargeDetail = { chargeId ->
                     navController.navigate(Screen.ChargeDetail(route.carId, chargeId, route.exteriorColor))
