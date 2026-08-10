@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -32,6 +34,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.matedroid.domain.BatteryAnalyticsSnapshot
 import com.matedroid.domain.BatteryMetricKind
+import com.matedroid.domain.EfficiencyWindow
 import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
 import com.matedroid.ui.components.BarChartData
 import com.matedroid.ui.components.InteractiveBarChart
@@ -42,13 +45,14 @@ fun BatteryScreen(carId: Int, efficiency: Double?, exteriorColor: String? = null
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     LaunchedEffect(carId) { viewModel.setCarId(carId, efficiency) }
     Scaffold(topBar = { TopAppBar(title = { Text("Battery analytics") }, navigationIcon = { IconButton(onClick = onNavigateBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } }) }) { padding ->
-        state.analytics?.let { BatteryContent(it, Modifier.padding(padding)) } ?: Column(Modifier.fillMaxSize().padding(padding).padding(24.dp)) { Text("Loading local battery history…") }
+        state.analytics?.let { BatteryContent(it, state, viewModel::selectWindow, Modifier.padding(padding)) } ?: Column(Modifier.fillMaxSize().padding(padding).padding(24.dp)) { Text("Loading local battery history…") }
     }
 }
 
-@Composable private fun BatteryContent(data: BatteryAnalyticsSnapshot, modifier: Modifier) {
+@Composable private fun BatteryContent(data: BatteryAnalyticsSnapshot, state: BatteryUiState, onWindow: (EfficiencyWindow) -> Unit, modifier: Modifier) {
     val twoPane = LocalAdaptiveLayoutInfo.current.supportsTwoPane
     LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        item { RealWorldCard(state, onWindow) }
         item { CapacitySummary(data) }
         if (twoPane) item { Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(12.dp)) { CapacityTrend(data); RangeCard() }
@@ -58,6 +62,21 @@ fun BatteryScreen(carId: Int, efficiency: Double?, exteriorColor: String? = null
         }
     }
 }
+
+@Composable private fun RealWorldCard(state: BatteryUiState, onWindow: (EfficiencyWindow) -> Unit) = Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    Label("TESMANO REAL-WORLD · ESTIMATED")
+    val range = state.range
+    Text(range?.toTenMiles?.let { "%.0f mi to 10%%".format(it) } ?: "Real-world range unavailable", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+    Text(range?.toZeroMiles?.let { "%.0f mi to 0%%".format(it) } ?: "Needs current SOC, usable-capacity estimate, and enough recent driving.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text(state.efficiency?.whPerMile?.let { "%.0f Wh/mi · %s represented · %d drives".format(it, "%.1f mi".format(state.efficiency!!.miles), state.efficiency!!.drives) } ?: "Efficiency unavailable")
+    Text(range?.confidence?.let { "$it confidence" } ?: "Insufficient coverage", style = MaterialTheme.typography.bodySmall)
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        item { WindowChip(EfficiencyWindow.Mi25, state.window, onWindow) }; item { WindowChip(EfficiencyWindow.Mi50, state.window, onWindow) }; item { WindowChip(EfficiencyWindow.Mi100, state.window, onWindow) }; item { WindowChip(EfficiencyWindow.Days7, state.window, onWindow) }; item { WindowChip(EfficiencyWindow.Days30, state.window, onWindow) }
+    }
+    Text("Tesla Rated: ${state.ratedRange?.let { "%.0f mi".format(it) } ?: "Unavailable"} · Tesla Estimated: ${state.teslaEstimatedRange?.let { "%.0f mi".format(it) } ?: "Unavailable"}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    Text("Based on recent driving; not route-aware and does not predict elevation, weather, traffic, HVAC, speed, or load.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+} }
+@Composable private fun WindowChip(window: EfficiencyWindow, selected: EfficiencyWindow, onWindow: (EfficiencyWindow) -> Unit) = FilterChip(selected == window, { onWindow(window) }, { Text(window.label) })
 
 @Composable private fun CapacitySummary(data: BatteryAnalyticsSnapshot) = Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
     Label("BATTERY · ${BatteryMetricKind.ESTIMATED}")
