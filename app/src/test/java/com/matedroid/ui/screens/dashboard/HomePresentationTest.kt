@@ -23,4 +23,9 @@ class HomePresentationTest {
         )
         assertNull(HomePresentation.freshnessLabel("2026-08-09T16:01:00Z", now))
     }
+
+    @Test
+    fun `vehicle identity presents Performance trim without internal badging`() {
+        assertEquals("Model Y Performance", HomePresentation.vehicleIdentityDescriptor("Y", "P74D"))
+    }
 }

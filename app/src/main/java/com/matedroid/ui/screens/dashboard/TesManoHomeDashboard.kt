@@ -51,6 +51,7 @@ import com.matedroid.domain.model.Trip
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
 import com.matedroid.ui.theme.PerformanceRed
+import com.matedroid.ui.theme.ChargingGreen
 import com.matedroid.ui.theme.TesManoSpacing
 import com.matedroid.ui.screens.trips.displayName
 import java.time.Duration
@@ -192,18 +193,6 @@ private fun VehicleHero(
         onClick = onNavigateToBattery
     ) {
         Column(modifier = Modifier.padding(TesManoSpacing.medium)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = "VEHICLE",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = PerformanceRed,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = androidx.compose.ui.unit.TextUnit(0.12f, androidx.compose.ui.unit.TextUnitType.Em)
-                )
-                Spacer(Modifier.weight(1f))
-                VehicleState(status)
-            }
-            Spacer(Modifier.height(TesManoSpacing.small))
             Text(
                 text = carName ?: status.displayName ?: "Tesla",
                 style = MaterialTheme.typography.headlineSmall,
@@ -212,7 +201,7 @@ private fun VehicleHero(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
-            val descriptor = listOfNotNull(carModel?.let { "Model $it" }, carTrimBadging).joinToString(" · ")
+            val descriptor = HomePresentation.vehicleIdentityDescriptor(carModel, carTrimBadging)
             if (descriptor.isNotBlank()) {
                 Text(
                     text = descriptor,
@@ -221,6 +210,12 @@ private fun VehicleHero(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                VehicleState(status)
             }
             TesManoVehicleImage(
                 carModel = carModel,
@@ -249,25 +244,38 @@ private fun VehicleHero(
                 }
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = status.odometer?.let { UnitFormatter.formatDistance(it, units, decimals = 0) } ?: "—",
+                        text = status.ratedBatteryRangeKm?.let { UnitFormatter.formatDistance(it, units, decimals = 0) } ?: "—",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Medium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "ODOMETER",
+                        text = "RATED RANGE",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-            HomePresentation.freshnessLabel(status.stateSince)?.let { freshness ->
-                Spacer(Modifier.height(TesManoSpacing.small))
-                Text(
-                    text = freshness,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+            Spacer(Modifier.height(TesManoSpacing.small))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HomePresentation.freshnessLabel(status.stateSince)?.let { freshness ->
+                    Text(
+                        text = freshness,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                status.odometer?.let { odometer ->
+                    Text(
+                        text = "Odometer · ${UnitFormatter.formatDistance(odometer, units, decimals = 0)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.outline
+                    )
+                }
             }
         }
     }
@@ -277,7 +285,7 @@ private fun VehicleHero(
 private fun VehicleState(status: CarStatus) {
     val label = HomePresentation.vehicleStateLabel(status.state)
     val color = when (label) {
-        "Charging" -> PerformanceRed
+        "Charging" -> ChargingGreen
         "Driving" -> MaterialTheme.colorScheme.tertiary
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
@@ -329,6 +337,7 @@ private fun RecentActivity(
                 value = totalCharges?.let { "%,d".format(it) } ?: "—",
                 label = "CHARGING SESSIONS",
                 icon = Icons.Filled.ElectricBolt,
+                iconTint = ChargingGreen,
                 onClick = onNavigateToCharges,
                 modifier = Modifier.weight(1f)
             )
@@ -368,6 +377,7 @@ private fun QuickInsights(
                 icon = Icons.Filled.ElectricBolt,
                 label = "Added this session",
                 value = chargeAdded,
+                iconTint = ChargingGreen,
                 onClick = onNavigateToBattery
             )
         }
@@ -424,11 +434,12 @@ private fun SummaryMetric(
     value: String,
     label: String,
     icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.clickable(onClick = onClick)) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(18.dp))
+        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
         Spacer(Modifier.height(6.dp))
         Text(value, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
         Text(label, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
@@ -440,6 +451,7 @@ private fun InsightRow(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     value: String,
+    iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant,
     onClick: () -> Unit
 ) {
     Row(
@@ -449,7 +461,7 @@ private fun InsightRow(
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(19.dp))
+        Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(19.dp))
         Spacer(Modifier.width(TesManoSpacing.small))
         Text(label, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurfaceVariant)
         Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, maxLines = 1)
@@ -507,6 +519,22 @@ private fun TesManoVehicleImage(
 }
 
 internal object HomePresentation {
+    fun vehicleIdentityDescriptor(model: String?, trimBadging: String?): String {
+        val modelName = when (model?.trim()?.uppercase()) {
+            "Y", "MODEL Y" -> "Model Y"
+            null, "" -> "Tesla"
+            else -> model.trim().replaceFirstChar { it.uppercase() }
+        }
+        val trimName = when {
+            trimBadging.orEmpty().startsWith("P", ignoreCase = true) ||
+                trimBadging.orEmpty().contains("performance", ignoreCase = true) -> "Performance"
+            trimBadging.orEmpty().contains("long", ignoreCase = true) || trimBadging in setOf("74", "74D") -> "Long Range"
+            trimBadging == "50" -> "Standard"
+            else -> null
+        }
+        return listOfNotNull(modelName, trimName).joinToString(" ")
+    }
+
     fun vehicleStateLabel(state: String?): String = when (state?.lowercase()) {
         "charging" -> "Charging"
         "driving" -> "Driving"

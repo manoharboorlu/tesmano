@@ -1,6 +1,5 @@
 package com.matedroid.ui.screens.dashboard
 
-import com.matedroid.BuildConfig
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -99,7 +98,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
@@ -179,6 +177,7 @@ import com.matedroid.ui.theme.MateDroidTheme
 import com.matedroid.ui.theme.StatusError
 import com.matedroid.ui.theme.StatusSuccess
 import com.matedroid.ui.theme.StatusWarning
+import com.matedroid.ui.theme.ChargingGreen
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -239,101 +238,12 @@ fun DashboardScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "TESMANO",
-                        modifier = if (BuildConfig.DEBUG) {
-                            Modifier.combinedClickable(
-                                onClick = {},
-                                onDoubleClick = {
-                                    uiState.selectedCarId?.let { carId ->
-                                        onNavigateToSentryHistory(carId, uiState.selectedCarExterior?.exteriorColor)
-                                    }
-                                }
-                            )
-                        } else Modifier
-                    )
-                },
-                actions = {
-                    val carSelected = uiState.selectedCarId != null
-                    // A touch of left inset and taller rows give the menu more breathing room.
-                    val menuItemPadding = PaddingValues(start = 24.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)
-                    IconButton(onClick = { menuExpanded = true }) {
-                        Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.menu))
-                    }
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.stats_title)) },
-                            leadingIcon = { Icon(Icons.Filled.Insights, contentDescription = null) },
-                            contentPadding = menuItemPadding,
-                            enabled = carSelected,
-                            onClick = {
-                                menuExpanded = false
-                                uiState.selectedCarId?.let { carId ->
-                                    onNavigateToStats(carId, uiState.selectedCarExterior?.exteriorColor)
-                                }
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.battery_health_title)) },
-                            leadingIcon = { Icon(Icons.Filled.BatteryFull, contentDescription = null) },
-                            contentPadding = menuItemPadding,
-                            enabled = carSelected,
-                            onClick = {
-                                menuExpanded = false
-                                uiState.selectedCarId?.let { carId ->
-                                    onNavigateToBattery(carId, uiState.selectedCarEfficiency, uiState.selectedCarExterior?.exteriorColor)
-                                }
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.where_was_i_screen_title)) },
-                            leadingIcon = { Icon(Icons.Filled.History, contentDescription = null) },
-                            contentPadding = menuItemPadding,
-                            enabled = carSelected,
-                            onClick = {
-                                menuExpanded = false
-                                showWhereWasIPicker = true
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.menu_sentry_events)) },
-                            leadingIcon = { Icon(Icons.Filled.Security, contentDescription = null) },
-                            contentPadding = menuItemPadding,
-                            enabled = carSelected,
-                            onClick = {
-                                menuExpanded = false
-                                uiState.selectedCarId?.let { carId ->
-                                    onNavigateToSentryHistory(carId, uiState.selectedCarExterior?.exteriorColor)
-                                }
-                            }
-                        )
-                        HorizontalDivider()
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.settings)) },
-                            leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
-                            contentPadding = menuItemPadding,
-                            onClick = {
-                                menuExpanded = false
-                                onNavigateToSettings()
-                            }
-                        )
-                    }
-                }
-            )
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { paddingValues ->
+        Box(Modifier.fillMaxSize().padding(paddingValues)) {
         PullToRefreshBox(
             isRefreshing = uiState.isRefreshing,
             onRefresh = { viewModel.refresh() },
-            modifier = Modifier.padding(paddingValues)
+            modifier = Modifier.fillMaxSize()
         ) {
             when {
                 uiState.isLoading -> {
@@ -432,6 +342,30 @@ fun DashboardScreen(
                 }
             }
         }
+            DashboardOverflowMenu(
+                expanded = menuExpanded,
+                onExpandedChange = { menuExpanded = it },
+                carSelected = uiState.selectedCarId != null,
+                onNavigateToStats = {
+                    uiState.selectedCarId?.let { carId ->
+                        onNavigateToStats(carId, uiState.selectedCarExterior?.exteriorColor)
+                    }
+                },
+                onNavigateToBattery = {
+                    uiState.selectedCarId?.let { carId ->
+                        onNavigateToBattery(carId, uiState.selectedCarEfficiency, uiState.selectedCarExterior?.exteriorColor)
+                    }
+                },
+                onNavigateToWhereWasI = { showWhereWasIPicker = true },
+                onNavigateToSentryHistory = {
+                    uiState.selectedCarId?.let { carId ->
+                        onNavigateToSentryHistory(carId, uiState.selectedCarExterior?.exteriorColor)
+                    }
+                },
+                onNavigateToSettings = onNavigateToSettings,
+                modifier = Modifier.align(Alignment.TopEnd).padding(top = 8.dp, end = 8.dp)
+            )
+        }
     }
 
     // "Where was I?" date/time picker — entered from the top-right menu.
@@ -445,6 +379,63 @@ fun DashboardScreen(
                 }
             }
         )
+    }
+}
+
+@Composable
+private fun DashboardOverflowMenu(
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    carSelected: Boolean,
+    onNavigateToStats: () -> Unit,
+    onNavigateToBattery: () -> Unit,
+    onNavigateToWhereWasI: () -> Unit,
+    onNavigateToSentryHistory: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val menuItemPadding = PaddingValues(start = 24.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)
+    Box(modifier) {
+        IconButton(onClick = { onExpandedChange(true) }) {
+            Icon(Icons.Filled.Menu, contentDescription = stringResource(R.string.menu))
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { onExpandedChange(false) }) {
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.stats_title)) },
+                leadingIcon = { Icon(Icons.Filled.Insights, contentDescription = null) },
+                contentPadding = menuItemPadding,
+                enabled = carSelected,
+                onClick = { onExpandedChange(false); onNavigateToStats() }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.battery_health_title)) },
+                leadingIcon = { Icon(Icons.Filled.BatteryFull, contentDescription = null) },
+                contentPadding = menuItemPadding,
+                enabled = carSelected,
+                onClick = { onExpandedChange(false); onNavigateToBattery() }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.where_was_i_screen_title)) },
+                leadingIcon = { Icon(Icons.Filled.History, contentDescription = null) },
+                contentPadding = menuItemPadding,
+                enabled = carSelected,
+                onClick = { onExpandedChange(false); onNavigateToWhereWasI() }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.menu_sentry_events)) },
+                leadingIcon = { Icon(Icons.Filled.Security, contentDescription = null) },
+                contentPadding = menuItemPadding,
+                enabled = carSelected,
+                onClick = { onExpandedChange(false); onNavigateToSentryHistory() }
+            )
+            HorizontalDivider()
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.settings)) },
+                leadingIcon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+                contentPadding = menuItemPadding,
+                onClick = { onExpandedChange(false); onNavigateToSettings() }
+            )
+        }
     }
 }
 
@@ -1201,7 +1192,11 @@ private fun StatusIndicatorsRow(
                         else -> Icons.Filled.PowerSettingsNew
                     },
                     tooltipText = stateTooltip,
-                    tint = if (isAwake) StatusSuccess else palette.onSurfaceVariant
+                    tint = when {
+                        isCharging -> ChargingGreen
+                        isAwake -> StatusSuccess
+                        else -> palette.onSurfaceVariant
+                    }
                 )
 
                 // Lock icon - grey when locked, light red when unlocked

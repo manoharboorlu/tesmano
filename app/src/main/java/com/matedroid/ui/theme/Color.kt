@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.Color
 // TesMano dark-only foundation: restrained graphite surfaces and Performance red.
 val PerformanceRed = Color(0xFFC74A4A)
 val PerformanceRedContainer = Color(0xFF5A2227)
+/** Reserved for actual charging state and charging-session affordances. */
+val ChargingGreen = Color(0xFF6FA987)
 val GraphiteBlack = Color(0xFF101112)
 val GraphiteSurface = Color(0xFF181A1C)
 val GraphiteSurfaceRaised = Color(0xFF222529)
