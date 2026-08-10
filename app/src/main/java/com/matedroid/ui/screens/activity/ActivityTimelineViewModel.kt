@@ -22,6 +22,9 @@ import com.matedroid.domain.model.SyncPhase
 import com.matedroid.domain.model.SyncProgress
 import com.matedroid.domain.DrivePlaceContext
 import com.matedroid.domain.SmartPlacesRepository
+import com.matedroid.domain.RouteTagsRepository
+import com.matedroid.domain.DriveTagSet
+import com.matedroid.data.local.entity.UserDriveTag
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import java.time.Instant
@@ -68,10 +71,18 @@ data class ActivityTimelineUiState(
     val hasMore: Boolean = true,
     val units: Units? = null,
     val syncProgress: SyncProgress? = null,
-    val drivePlaces: Map<Int, DrivePlaceContext> = emptyMap()
+    val drivePlaces: Map<Int, DrivePlaceContext> = emptyMap(),
+    val driveTags: Map<Int, DriveTagSet> = emptyMap(),
+    val availableTags: List<UserDriveTag> = emptyList(),
+    val tagFilter: ActivityTagFilter? = null
 ) {
     val isSyncing: Boolean
         get() = syncProgress?.phase?.let { it !in setOf(SyncPhase.IDLE, SyncPhase.COMPLETE, SyncPhase.ERROR) } == true
+}
+
+sealed interface ActivityTagFilter {
+    data object Commute : ActivityTagFilter
+    data class User(val tagId: Long, val name: String) : ActivityTagFilter
 }
 
 /**
@@ -85,7 +96,8 @@ class ActivityTimelineViewModel @Inject constructor(
     private val chargeSummaryDao: ChargeSummaryDao,
     private val teslamateRepository: TeslamateRepository,
     private val syncManager: SyncManager,
-    private val smartPlacesRepository: SmartPlacesRepository
+    private val smartPlacesRepository: SmartPlacesRepository,
+    private val routeTagsRepository: RouteTagsRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ActivityTimelineUiState())
     val uiState: StateFlow<ActivityTimelineUiState> = _uiState.asStateFlow()
@@ -94,6 +106,8 @@ class ActivityTimelineViewModel @Inject constructor(
     private var driveOffset = 0
     private var chargeOffset = 0
     private var sourceMayHaveMore = true
+    /** Set synchronously before launching so filter-driven effects cannot request the same page twice. */
+    private var pageRequestInFlight = false
     private val pendingEntries = mutableListOf<ActivityEntry>()
     private var syncJob: Job? = null
 
@@ -107,6 +121,10 @@ class ActivityTimelineViewModel @Inject constructor(
 
     fun setFilter(filter: ActivityFilter) {
         _uiState.update { it.copy(filter = filter) }
+    }
+
+    fun setTagFilter(filter: ActivityTagFilter?) {
+        _uiState.update { it.copy(tagFilter = filter) }
     }
 
     fun loadMore() {
@@ -135,40 +153,50 @@ class ActivityTimelineViewModel @Inject constructor(
         chargeOffset = 0
         sourceMayHaveMore = true
         pendingEntries.clear()
-        _uiState.value = ActivityTimelineUiState(units = _uiState.value.units)
+        _uiState.value = ActivityTimelineUiState(units = _uiState.value.units, availableTags = _uiState.value.availableTags, tagFilter = _uiState.value.tagFilter)
         loadPage(initial = true)
     }
 
     private fun loadPage(initial: Boolean) {
         val id = carId ?: return
+        if (pageRequestInFlight) return
+        pageRequestInFlight = true
         viewModelScope.launch {
-            _uiState.update {
-                if (initial) it.copy(isLoading = true) else it.copy(isLoadingMore = true)
-            }
-            val drives = if (sourceMayHaveMore) {
-                driveSummaryDao.getRecentPageForCar(id, PAGE_SIZE, driveOffset)
-            } else emptyList()
-            val charges = if (sourceMayHaveMore) {
-                chargeSummaryDao.getRecentPageForCar(id, PAGE_SIZE, chargeOffset)
-            } else emptyList()
-            driveOffset += drives.size
-            chargeOffset += charges.size
-            sourceMayHaveMore = drives.size == PAGE_SIZE || charges.size == PAGE_SIZE
-            pendingEntries += drives.map(ActivityEntry::Drive)
-            pendingEntries += charges.map(ActivityEntry::Charge)
-            pendingEntries.sortByDescending { it.timelineEpochMillis() }
+            try {
+                _uiState.update {
+                    if (initial) it.copy(isLoading = true) else it.copy(isLoadingMore = true)
+                }
+                val drives = if (sourceMayHaveMore) {
+                    driveSummaryDao.getRecentPageForCar(id, PAGE_SIZE, driveOffset)
+                } else emptyList()
+                val charges = if (sourceMayHaveMore) {
+                    chargeSummaryDao.getRecentPageForCar(id, PAGE_SIZE, chargeOffset)
+                } else emptyList()
+                driveOffset += drives.size
+                chargeOffset += charges.size
+                sourceMayHaveMore = drives.size == PAGE_SIZE || charges.size == PAGE_SIZE
+                pendingEntries += drives.map(ActivityEntry::Drive)
+                pendingEntries += charges.map(ActivityEntry::Charge)
+                pendingEntries.sortByDescending { it.timelineEpochMillis() }
 
-            val nextEntries = pendingEntries.take(PAGE_SIZE)
-            pendingEntries.subList(0, nextEntries.size).clear()
-            val drivePlaces = smartPlacesRepository.contextsForDrives(id, nextEntries.filterIsInstance<ActivityEntry.Drive>().map { it.id })
-            _uiState.update {
-                it.copy(
-                    isLoading = false,
-                    isLoadingMore = false,
-                    entries = it.entries + nextEntries,
-                    drivePlaces = it.drivePlaces + drivePlaces,
-                    hasMore = sourceMayHaveMore || pendingEntries.isNotEmpty()
-                )
+                val nextEntries = pendingEntries.take(PAGE_SIZE)
+                pendingEntries.subList(0, nextEntries.size).clear()
+                val drivePlaces = smartPlacesRepository.contextsForDrives(id, nextEntries.filterIsInstance<ActivityEntry.Drive>().map { it.id })
+                val driveTags = routeTagsRepository.tagsForDrives(id, nextEntries.filterIsInstance<ActivityEntry.Drive>().map { it.id })
+                val availableTags = routeTagsRepository.enabledTags()
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        isLoadingMore = false,
+                        entries = it.entries + nextEntries,
+                        drivePlaces = it.drivePlaces + drivePlaces,
+                        driveTags = it.driveTags + driveTags,
+                        availableTags = availableTags,
+                        hasMore = sourceMayHaveMore || pendingEntries.isNotEmpty()
+                    )
+                }
+            } finally {
+                pageRequestInFlight = false
             }
         }
     }

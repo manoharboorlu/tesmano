@@ -40,6 +40,9 @@ interface SmartPlacesDao {
     @Query("SELECT * FROM drive_endpoint_cache WHERE driveId IN (:driveIds)")
     suspend fun endpointsForDrives(driveIds: List<Int>): List<DriveEndpointCache>
 
+    @Query("SELECT * FROM drive_endpoint_cache WHERE carId = :carId")
+    suspend fun endpointsForCar(carId: Int): List<DriveEndpointCache>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertOverride(override: DriveTagOverride)
 

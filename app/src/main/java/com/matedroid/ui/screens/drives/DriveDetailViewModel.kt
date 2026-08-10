@@ -17,6 +17,9 @@ import com.matedroid.domain.DrivePlaceContext
 import com.matedroid.domain.SmartPlacesRepository
 import com.matedroid.data.local.entity.SmartPlace
 import com.matedroid.domain.GeoPoint
+import com.matedroid.domain.DriveTagSet
+import com.matedroid.domain.RouteTagsRepository
+import com.matedroid.data.local.entity.UserDriveTag
 import com.matedroid.domain.model.Trip
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +39,9 @@ data class DriveDetailUiState(
     val isLoadingWeather: Boolean = false,
     val containingTrip: Pair<Long, Trip>? = null,
     val comparison: DriveComparison? = null,
-    val placeContext: DrivePlaceContext? = null
+    val placeContext: DrivePlaceContext? = null,
+    val tags: DriveTagSet = DriveTagSet(false, emptyList()),
+    val availableTags: List<UserDriveTag> = emptyList()
 )
 
 data class DriveDetailStats(
@@ -68,7 +73,8 @@ class DriveDetailViewModel @Inject constructor(
     private val weatherRepository: WeatherRepository,
     private val tripRepository: TripRepository,
     private val driveComparisonRepository: DriveComparisonRepository,
-    private val smartPlacesRepository: SmartPlacesRepository
+    private val smartPlacesRepository: SmartPlacesRepository,
+    private val routeTagsRepository: RouteTagsRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DriveDetailUiState())
@@ -144,7 +150,31 @@ class DriveDetailViewModel @Inject constructor(
         viewModelScope.launch {
             detail?.let { smartPlacesRepository.cacheLoadedDetail(currentCarId, currentDriveId, it) }
             _uiState.update { it.copy(placeContext = smartPlacesRepository.contextForDrive(currentCarId, currentDriveId)) }
+            refreshTags()
         }
+    }
+
+    private fun refreshTags() {
+        val currentCarId = carId ?: return
+        val currentDriveId = driveId ?: return
+        viewModelScope.launch {
+            _uiState.update { it.copy(tags = routeTagsRepository.tagsForDrive(currentCarId, currentDriveId), availableTags = routeTagsRepository.enabledTags()) }
+        }
+    }
+
+    fun addTag(tagId: Long) {
+        val currentDriveId = driveId ?: return
+        viewModelScope.launch { routeTagsRepository.addManualTag(currentDriveId, tagId); refreshTags() }
+    }
+
+    fun createAndAddTag(name: String) {
+        val currentDriveId = driveId ?: return
+        viewModelScope.launch { routeTagsRepository.addManualTag(currentDriveId, routeTagsRepository.createTag(name).id); refreshTags() }
+    }
+
+    fun removeTag(tagId: Long) {
+        val currentDriveId = driveId ?: return
+        viewModelScope.launch { routeTagsRepository.removeManualTag(currentDriveId, tagId); refreshTags() }
     }
 
     fun markCommute() {

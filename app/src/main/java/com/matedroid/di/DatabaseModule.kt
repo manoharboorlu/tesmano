@@ -14,6 +14,7 @@ import com.matedroid.data.local.dao.SavedTripDao
 import com.matedroid.data.local.dao.SentryAlertLogDao
 import com.matedroid.data.local.dao.SyncStateDao
 import com.matedroid.data.local.dao.SmartPlacesDao
+import com.matedroid.data.local.dao.RouteTagsDao
 import com.matedroid.data.local.dao.TripCountryCacheDao
 import com.matedroid.data.local.dao.TripRouteCacheDao
 import dagger.Module
@@ -113,4 +114,8 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideSmartPlacesDao(database: StatsDatabase): SmartPlacesDao = database.smartPlacesDao()
+
+    @Provides
+    @Singleton
+    fun provideRouteTagsDao(database: StatsDatabase): RouteTagsDao = database.routeTagsDao()
 }

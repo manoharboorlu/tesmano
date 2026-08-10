@@ -17,6 +17,7 @@ import com.matedroid.data.local.dao.SyncStateDao
 import com.matedroid.data.local.dao.SmartPlacesDao
 import com.matedroid.data.local.dao.TripCountryCacheDao
 import com.matedroid.data.local.dao.TripRouteCacheDao
+import com.matedroid.data.local.dao.RouteTagsDao
 import com.matedroid.data.local.entity.ChargeDetailAggregate
 import com.matedroid.data.local.entity.ChargeSummary
 import com.matedroid.data.local.entity.ChargingRateRule
@@ -36,6 +37,9 @@ import com.matedroid.data.local.entity.DriveEndpointCache
 import com.matedroid.data.local.entity.DriveTagOverride
 import com.matedroid.data.local.entity.TripCountryCache
 import com.matedroid.data.local.entity.TripRouteCache
+import com.matedroid.data.local.entity.UserDriveTag
+import com.matedroid.data.local.entity.DriveManualTag
+import com.matedroid.data.local.entity.RecurringRouteMetadata
 
 /**
  * Room database for storing stats data locally.
@@ -69,9 +73,12 @@ import com.matedroid.data.local.entity.TripRouteCache
         DriveEndpointCache::class,
         DriveTagOverride::class,
         ChargingRateRule::class,
-        ChargeCostOverride::class
+        ChargeCostOverride::class,
+        UserDriveTag::class,
+        DriveManualTag::class,
+        RecurringRouteMetadata::class
     ],
-    version = 16,
+    version = 17,
     exportSchema = true
 )
 abstract class StatsDatabase : RoomDatabase() {
@@ -89,6 +96,7 @@ abstract class StatsDatabase : RoomDatabase() {
     abstract fun savedTripDao(): SavedTripDao
     abstract fun smartPlacesDao(): SmartPlacesDao
     abstract fun chargingCostDao(): ChargingCostDao
+    abstract fun routeTagsDao(): RouteTagsDao
 
     companion object {
         const val DATABASE_NAME = "matedroid_stats.db"
@@ -407,6 +415,24 @@ abstract class StatsDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
+        /** Migration from V16 to V17: local recurring-route intent and reusable manual drive tags. */
+        val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE IF NOT EXISTS user_drive_tags (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, name TEXT NOT NULL, enabled INTEGER NOT NULL,
+                    createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL)""")
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_user_drive_tags_name ON user_drive_tags (name)")
+                db.execSQL("""CREATE TABLE IF NOT EXISTS drive_manual_tags (
+                    driveId INTEGER NOT NULL, tagId INTEGER NOT NULL, createdAt INTEGER NOT NULL,
+                    PRIMARY KEY (driveId, tagId))""")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_drive_manual_tags_tagId ON drive_manual_tags (tagId)")
+                db.execSQL("""CREATE TABLE IF NOT EXISTS recurring_route_metadata (
+                    routeKey TEXT NOT NULL PRIMARY KEY, name TEXT, confirmed INTEGER NOT NULL, dismissed INTEGER NOT NULL,
+                    enabled INTEGER NOT NULL, originLatitude REAL, originLongitude REAL,
+                    destinationLatitude REAL, destinationLongitude REAL, createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL)""")
+            }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
     }
 }

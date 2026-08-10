@@ -35,6 +35,7 @@ import com.matedroid.ui.screens.drives.DrivesScreen
 import com.matedroid.ui.screens.mileage.MileageScreen
 import com.matedroid.ui.screens.settings.SettingsScreen
 import com.matedroid.ui.screens.places.SmartPlacesScreen
+import com.matedroid.ui.screens.routes.RecurringRoutesScreen
 import com.matedroid.ui.screens.stats.CountriesVisitedScreen
 import com.matedroid.ui.screens.stats.RegionsVisitedScreen
 import com.matedroid.ui.screens.stats.StatsScreen
@@ -68,6 +69,9 @@ sealed interface Screen {
 
     @Serializable
     data class Activity(val carId: Int, val exteriorColor: String? = null) : Screen
+
+    @Serializable
+    data class RecurringRoutes(val carId: Int, val exteriorColor: String? = null) : Screen
 
     @Serializable
     data object PalettePreview : Screen
@@ -190,6 +194,7 @@ fun NavGraph(
                     "charging_analytics" -> Screen.ChargingAnalytics(carId, exteriorColor)
                     "drives" -> Screen.Drives(carId, exteriorColor)
                     "activity" -> Screen.Activity(carId, exteriorColor)
+                    "recurring_routes" -> Screen.RecurringRoutes(carId, exteriorColor)
                     "mileage" -> Screen.Mileage(carId, exteriorColor)
                     "battery" -> Screen.Battery(carId, exteriorColor = exteriorColor)
                     "stats" -> Screen.Stats(carId, exteriorColor)
@@ -281,8 +286,22 @@ fun NavGraph(
                 onNavigateToDriveDetail = { driveId ->
                     navController.navigate(Screen.DriveDetail(route.carId, driveId, route.exteriorColor))
                 },
+                onNavigateToRecurringRoutes = {
+                    navController.navigate(Screen.RecurringRoutes(route.carId, route.exteriorColor))
+                },
                 onNavigateToChargeDetail = { chargeId ->
                     navController.navigate(Screen.ChargeDetail(route.carId, chargeId, route.exteriorColor))
+                }
+            )
+        }
+
+        composable<Screen.RecurringRoutes> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.RecurringRoutes>()
+            RecurringRoutesScreen(
+                carId = route.carId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDriveDetail = { driveId ->
+                    navController.navigate(Screen.DriveDetail(route.carId, driveId, route.exteriorColor))
                 }
             )
         }

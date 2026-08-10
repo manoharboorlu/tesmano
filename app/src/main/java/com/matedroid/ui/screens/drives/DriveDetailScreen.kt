@@ -89,6 +89,8 @@ import com.matedroid.data.api.models.Units
 import com.matedroid.data.repository.WeatherPoint
 import com.matedroid.domain.DriveComparison
 import com.matedroid.domain.DrivePlaceContext
+import com.matedroid.domain.DriveTagSet
+import com.matedroid.data.local.entity.UserDriveTag
 import com.matedroid.domain.GeoPoint as TesManoGeoPoint
 import com.matedroid.data.local.entity.SmartPlaceType
 import com.matedroid.domain.model.UnitFormatter
@@ -181,6 +183,11 @@ fun DriveDetailScreen(
                     onUnmarkCommute = viewModel::unmarkCommute,
                     onReturnToAutomatic = viewModel::returnToAutomaticCommute,
                     onSaveEndpoint = viewModel::saveEndpointAsPlace,
+                    tags = uiState.tags,
+                    availableTags = uiState.availableTags,
+                    onAddTag = viewModel::addTag,
+                    onCreateTag = viewModel::createAndAddTag,
+                    onRemoveTag = viewModel::removeTag,
                     modifier = Modifier.padding(padding)
                 )
             }
@@ -206,6 +213,11 @@ private fun DriveDetailContent(
     onUnmarkCommute: () -> Unit,
     onReturnToAutomatic: () -> Unit,
     onSaveEndpoint: (String, String, TesManoGeoPoint, String?, Int) -> Unit,
+    tags: DriveTagSet,
+    availableTags: List<UserDriveTag>,
+    onAddTag: (Long) -> Unit,
+    onCreateTag: (String) -> Unit,
+    onRemoveTag: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val is24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
@@ -252,6 +264,7 @@ private fun DriveDetailContent(
             onSaveStart = { point -> endpointToSave = "Start" to point },
             onSaveEnd = { point -> endpointToSave = "Destination" to point }
         )
+        DriveTagsCard(tags, availableTags, onAddTag, onCreateTag, onRemoveTag)
         if (adaptive.supportsTwoPane) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -349,6 +362,38 @@ private fun DriveDetailContent(
                 endpointToSave = null
             }
         )
+    }
+}
+
+@Composable
+private fun DriveTagsCard(tags: DriveTagSet, available: List<UserDriveTag>, onAdd: (Long) -> Unit, onCreate: (String) -> Unit, onRemove: (Long) -> Unit) {
+    var chooserOpen by remember { mutableStateOf(false) }
+    var creating by remember { mutableStateOf(false) }
+    if (chooserOpen) AlertDialog(
+        onDismissRequest = { chooserOpen = false },
+        title = { Text("Add tag") },
+        text = { Column {
+            available.filterNot { candidate -> tags.manual.any { it.id == candidate.id } }.forEach { tag ->
+                TextButton(onClick = { onAdd(tag.id); chooserOpen = false }) { Text(tag.name) }
+            }
+            TextButton(onClick = { chooserOpen = false; creating = true }) { Text("Create new tag") }
+        } },
+        confirmButton = { TextButton(onClick = { chooserOpen = false }) { Text("Close") } }
+    )
+    if (creating) {
+        var name by remember { mutableStateOf("") }
+        AlertDialog(onDismissRequest = { creating = false }, title = { Text("New tag") }, text = { androidx.compose.material3.OutlinedTextField(name, { name = it }, label = { Text("Tag name") }, singleLine = true) }, confirmButton = { TextButton(enabled = name.isNotBlank(), onClick = { onCreate(name); creating = false }) { Text("Add") } }, dismissButton = { TextButton(onClick = { creating = false }) { Text("Cancel") } })
+    }
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(20.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("TAGS", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = PerformanceRed)
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (tags.commute) Text("COMMUTE", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                tags.manual.forEach { tag -> TextButton(onClick = { onRemove(tag.id) }) { Text("${tag.name} ×") } }
+                TextButton(onClick = { chooserOpen = true }) { Text("+ Add") }
+            }
+            Text("Commute is derived from Home ↔ Work; user tags are manual.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 

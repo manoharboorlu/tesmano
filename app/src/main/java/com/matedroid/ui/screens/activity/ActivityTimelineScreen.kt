@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
@@ -32,12 +33,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -51,6 +55,7 @@ import com.matedroid.data.api.models.Units
 import com.matedroid.data.local.entity.ChargeSummary
 import com.matedroid.data.local.entity.DriveSummary
 import com.matedroid.domain.DrivePlaceContext
+import com.matedroid.domain.DriveTagSet
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
 import com.matedroid.util.formatDurationCompact
@@ -70,18 +75,25 @@ fun ActivityTimelineScreen(
     onNavigateBack: () -> Unit,
     onNavigateToDriveDetail: (Int) -> Unit,
     onNavigateToChargeDetail: (Int) -> Unit,
+    onNavigateToRecurringRoutes: () -> Unit,
     viewModel: ActivityTimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val layout = LocalAdaptiveLayoutInfo.current
     val listState = rememberLazyListState()
-    val filtered = remember(uiState.entries, uiState.filter) {
+    val filtered = remember(uiState.entries, uiState.filter, uiState.tagFilter, uiState.driveTags) {
         uiState.entries.filter { entry ->
-            when (uiState.filter) {
+            val typeMatches = when (uiState.filter) {
                 ActivityFilter.ALL -> true
                 ActivityFilter.DRIVES -> entry is ActivityEntry.Drive
                 ActivityFilter.CHARGES -> entry is ActivityEntry.Charge
             }
+            val tagMatches = when (val tag = uiState.tagFilter) {
+                null -> true
+                ActivityTagFilter.Commute -> entry is ActivityEntry.Drive && uiState.driveTags[entry.id]?.commute == true
+                is ActivityTagFilter.User -> entry is ActivityEntry.Drive && uiState.driveTags[entry.id]?.manual?.any { it.id == tag.tagId } == true
+            }
+            typeMatches && tagMatches
         }
     }
     val rows = remember(filtered) { buildTimelineRows(filtered) }
@@ -106,7 +118,8 @@ fun ActivityTimelineScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
                     }
-                }
+                },
+                actions = { IconButton(onClick = onNavigateToRecurringRoutes) { Icon(Icons.Filled.Route, "Recurring routes") } }
             )
         }
     ) { padding ->
@@ -126,7 +139,10 @@ fun ActivityTimelineScreen(
                         filter = uiState.filter,
                         isSyncing = uiState.isSyncing,
                         syncProgress = uiState.syncProgress?.percentage,
-                        onFilterSelected = viewModel::setFilter
+                        onFilterSelected = viewModel::setFilter,
+                        tagFilter = uiState.tagFilter,
+                        availableTags = uiState.availableTags,
+                        onTagFilterSelected = viewModel::setTagFilter
                     )
                     when {
                         uiState.isLoading -> LoadingActivity()
@@ -144,6 +160,7 @@ fun ActivityTimelineScreen(
                                         entry = row.entry,
                                         units = uiState.units,
                                         placeContext = (row.entry as? ActivityEntry.Drive)?.let { uiState.drivePlaces[it.id] },
+                                        tags = (row.entry as? ActivityEntry.Drive)?.let { uiState.driveTags[it.id] },
                                         onClick = {
                                             when (val entry = row.entry) {
                                                 is ActivityEntry.Drive -> onNavigateToDriveDetail(entry.id)
@@ -169,8 +186,12 @@ private fun ActivityHeader(
     filter: ActivityFilter,
     isSyncing: Boolean,
     syncProgress: Float?,
-    onFilterSelected: (ActivityFilter) -> Unit
+    onFilterSelected: (ActivityFilter) -> Unit,
+    tagFilter: ActivityTagFilter?,
+    availableTags: List<com.matedroid.data.local.entity.UserDriveTag>,
+    onTagFilterSelected: (ActivityTagFilter?) -> Unit
 ) {
+    var choosingTag by remember { androidx.compose.runtime.mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
         Text(
             text = if (isSyncing) stringResource(R.string.activity_refreshing) else stringResource(R.string.activity_timeline_cached),
@@ -182,7 +203,14 @@ private fun ActivityHeader(
             TimelineFilterChip(ActivityFilter.ALL, filter, onFilterSelected)
             TimelineFilterChip(ActivityFilter.DRIVES, filter, onFilterSelected)
             TimelineFilterChip(ActivityFilter.CHARGES, filter, onFilterSelected)
+            FilterChip(selected = tagFilter != null, onClick = { choosingTag = true }, label = { Text(when (val active = tagFilter) { null -> "Tags"; ActivityTagFilter.Commute -> "Commute"; is ActivityTagFilter.User -> active.name }) })
         }
+        if (choosingTag) AlertDialog(
+            onDismissRequest = { choosingTag = false },
+            title = { Text("Filter drives by tag") },
+            text = { Column { TextButton(onClick = { onTagFilterSelected(null); choosingTag = false }) { Text("All tags") }; TextButton(onClick = { onTagFilterSelected(ActivityTagFilter.Commute); choosingTag = false }) { Text("Commute") }; availableTags.forEach { tag -> TextButton(onClick = { onTagFilterSelected(ActivityTagFilter.User(tag.id, tag.name)); choosingTag = false }) { Text(tag.name) } } } },
+            confirmButton = { TextButton(onClick = { choosingTag = false }) { Text("Close") } }
+        )
         if (isSyncing) {
             Spacer(Modifier.height(10.dp))
             LinearProgressIndicator(
@@ -253,7 +281,7 @@ private fun DateHeader(date: LocalDate?) {
 }
 
 @Composable
-private fun ActivityRow(entry: ActivityEntry, units: Units?, placeContext: DrivePlaceContext?, onClick: () -> Unit) {
+private fun ActivityRow(entry: ActivityEntry, units: Units?, placeContext: DrivePlaceContext?, tags: DriveTagSet?, onClick: () -> Unit) {
     val context = LocalContext.current
     val time = entry.localStart()?.let { local ->
         val start = DateFormat.getTimeFormat(context).format(java.util.Date(local.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()))
@@ -263,7 +291,7 @@ private fun ActivityRow(entry: ActivityEntry, units: Units?, placeContext: Drive
         if (end == null || start == end) start else "$start – $end"
     } ?: stringResource(R.string.unknown)
     val (label, icon, headline, details) = when (entry) {
-        is ActivityEntry.Drive -> driveRowContent(entry.summary, units, placeContext)
+        is ActivityEntry.Drive -> driveRowContent(entry.summary, units, placeContext, tags)
         is ActivityEntry.Charge -> chargeRowContent(entry.summary)
     }
     Row(
@@ -293,7 +321,7 @@ private fun ActivityRow(entry: ActivityEntry, units: Units?, placeContext: Drive
 }
 
 @Composable
-private fun driveRowContent(summary: DriveSummary, units: Units?, placeContext: DrivePlaceContext?): TimelineContent {
+private fun driveRowContent(summary: DriveSummary, units: Units?, placeContext: DrivePlaceContext?, tags: DriveTagSet?): TimelineContent {
     val unknown = stringResource(R.string.activity_unknown_location)
     val start = placeContext?.start?.name ?: summary.startAddress.ifBlank { unknown }
     val end = placeContext?.end?.name ?: summary.endAddress.ifBlank { unknown }
@@ -302,7 +330,9 @@ private fun driveRowContent(summary: DriveSummary, units: Units?, placeContext: 
         if (summary.durationMin > 0) add(formatDurationCompact(summary.durationMin))
         summary.efficiency?.takeIf { it > 0 && summary.distance >= 1 }?.let { add(UnitFormatter.formatEfficiency(it, units, 0)) }
         summary.energyConsumed?.takeIf { it >= 0.5 }?.let { add(UnitFormatter.formatEnergy(it)) }
-        if (placeContext?.commute == true) add("Commute")
+        if (tags?.commute == true) add("Commute")
+        tags?.manual?.take(2)?.forEach { add(it.name) }
+        tags?.manual?.drop(2)?.takeIf { it.isNotEmpty() }?.let { add("+${it.size}") }
     }
     return TimelineContent(stringResource(R.string.activity_drive), Icons.Filled.DirectionsCar, "$start → $end", details)
 }
