@@ -5,6 +5,7 @@ import androidx.room.Room
 import com.matedroid.data.local.StatsDatabase
 import com.matedroid.data.local.dao.AggregateDao
 import com.matedroid.data.local.dao.ChargeSummaryDao
+import com.matedroid.data.local.dao.ChargingCostDao
 import com.matedroid.data.local.dao.DriveSummaryDao
 import com.matedroid.data.local.dao.GeocodeCacheDao
 import com.matedroid.data.local.dao.GeocodeProgressDao
@@ -57,6 +58,9 @@ object DatabaseModule {
     fun provideChargeSummaryDao(database: StatsDatabase): ChargeSummaryDao {
         return database.chargeSummaryDao()
     }
+
+    @Provides @Singleton
+    fun provideChargingCostDao(database: StatsDatabase): ChargingCostDao = database.chargingCostDao()
 
     @Provides
     @Singleton

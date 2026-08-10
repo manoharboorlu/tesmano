@@ -6,6 +6,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.matedroid.data.local.dao.AggregateDao
 import com.matedroid.data.local.dao.ChargeSummaryDao
+import com.matedroid.data.local.dao.ChargingCostDao
 import com.matedroid.data.local.dao.DriveSummaryDao
 import com.matedroid.data.local.dao.GeocodeCacheDao
 import com.matedroid.data.local.dao.GeocodeProgressDao
@@ -18,6 +19,8 @@ import com.matedroid.data.local.dao.TripCountryCacheDao
 import com.matedroid.data.local.dao.TripRouteCacheDao
 import com.matedroid.data.local.entity.ChargeDetailAggregate
 import com.matedroid.data.local.entity.ChargeSummary
+import com.matedroid.data.local.entity.ChargingRateRule
+import com.matedroid.data.local.entity.ChargeCostOverride
 import com.matedroid.data.local.entity.DriveDetailAggregate
 import com.matedroid.data.local.entity.DriveSummary
 import com.matedroid.data.local.entity.GeocodeCache
@@ -64,9 +67,11 @@ import com.matedroid.data.local.entity.TripRouteCache
         SavedTripConsumedFingerprint::class,
         SmartPlace::class,
         DriveEndpointCache::class,
-        DriveTagOverride::class
+        DriveTagOverride::class,
+        ChargingRateRule::class,
+        ChargeCostOverride::class
     ],
-    version = 15,
+    version = 16,
     exportSchema = true
 )
 abstract class StatsDatabase : RoomDatabase() {
@@ -83,6 +88,7 @@ abstract class StatsDatabase : RoomDatabase() {
     abstract fun tripCountryCacheDao(): TripCountryCacheDao
     abstract fun savedTripDao(): SavedTripDao
     abstract fun smartPlacesDao(): SmartPlacesDao
+    abstract fun chargingCostDao(): ChargingCostDao
 
     companion object {
         const val DATABASE_NAME = "matedroid_stats.db"
@@ -386,6 +392,21 @@ abstract class StatsDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+        val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""CREATE TABLE IF NOT EXISTS charging_rate_rules (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, scope TEXT NOT NULL, smartPlaceId INTEGER,
+                    name TEXT NOT NULL, priceMicrosPerKwh INTEGER NOT NULL, currencyCode TEXT NOT NULL,
+                    freeCharging INTEGER NOT NULL, enabled INTEGER NOT NULL, effectiveFrom INTEGER NOT NULL,
+                    createdAt INTEGER NOT NULL, updatedAt INTEGER NOT NULL)""")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_charging_rate_rules_smartPlaceId ON charging_rate_rules (smartPlaceId)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_charging_rate_rules_scope_enabled ON charging_rate_rules (scope, enabled)")
+                db.execSQL("""CREATE TABLE IF NOT EXISTS charge_cost_overrides (
+                    chargeId INTEGER PRIMARY KEY NOT NULL, mode TEXT NOT NULL, costMinorUnits INTEGER,
+                    currencyCode TEXT NOT NULL, updatedAt INTEGER NOT NULL)""")
+            }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16)
     }
 }

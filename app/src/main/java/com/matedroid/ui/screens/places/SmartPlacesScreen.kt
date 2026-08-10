@@ -48,6 +48,8 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.matedroid.data.local.entity.SmartPlace
 import com.matedroid.data.local.entity.SmartPlaceType
+import com.matedroid.data.local.entity.ChargingRateRule
+import com.matedroid.data.local.entity.ChargingRateScope
 import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
 import com.matedroid.ui.components.createLabeledPinMarkerDrawable
 import com.matedroid.ui.theme.PerformanceRed
@@ -68,6 +70,7 @@ fun SmartPlacesScreen(
     viewModel: SmartPlacesViewModel = hiltViewModel()
 ) {
     val places by viewModel.places.collectAsStateWithLifecycle()
+    val chargingRates by viewModel.chargingRates.collectAsStateWithLifecycle()
     val adaptive = LocalAdaptiveLayoutInfo.current
     var editing by remember { mutableStateOf<SmartPlace?>(null) }
     var creating by remember { mutableStateOf(false) }
@@ -79,7 +82,9 @@ fun SmartPlacesScreen(
             if (creating || editing != null) PlaceEditor(
                 existing = editing,
                 initialCenter = places.firstOrNull(),
+                rate = editing?.let { place -> chargingRates.firstOrNull { it.scope == ChargingRateScope.PLACE && it.smartPlaceId == place.id && it.enabled } },
                 onSave = { viewModel.save(it); creating = false; editing = null },
+                onSaveRate = viewModel::saveRate,
                 onCancel = { creating = false; editing = null },
                 onDelete = { editing?.let(viewModel::delete); editing = null }
             )
@@ -87,12 +92,13 @@ fun SmartPlacesScreen(
         if (adaptive.supportsTwoPane) {
             Row(Modifier.fillMaxSize().padding(padding).padding(16.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 PlacesList(places, { editing = it; creating = false }, Modifier.weight(1f))
-                Column(Modifier.weight(1f)) { editor() }
+                Column(Modifier.weight(1f)) { editor(); DefaultRateEditor(chargingRates.firstOrNull { it.scope == ChargingRateScope.DEFAULT && it.enabled }, viewModel::saveRate) }
             }
         } else {
             Column(Modifier.fillMaxSize().padding(padding).padding(16.dp)) {
                 PlacesList(places, { editing = it; creating = false }, Modifier.weight(1f))
                 if (creating || editing != null) { Spacer(Modifier.height(12.dp)); editor() }
+                Spacer(Modifier.height(12.dp)); DefaultRateEditor(chargingRates.firstOrNull { it.scope == ChargingRateScope.DEFAULT && it.enabled }, viewModel::saveRate)
             }
         }
     }
@@ -121,7 +127,9 @@ private fun PlacesList(places: List<SmartPlace>, onEdit: (SmartPlace) -> Unit, m
 private fun PlaceEditor(
     existing: SmartPlace?,
     initialCenter: SmartPlace?,
+    rate: ChargingRateRule?,
     onSave: (SmartPlace) -> Unit,
+    onSaveRate: (ChargingRateRule) -> Unit,
     onCancel: () -> Unit,
     onDelete: () -> Unit
 ) {
@@ -131,6 +139,8 @@ private fun PlaceEditor(
     var longitude by rememberSaveable(existing?.id) { mutableStateOf(existing?.longitude ?: initialCenter?.longitude ?: 0.0) }
     var radius by rememberSaveable(existing?.id) { mutableStateOf((existing?.radiusMeters ?: 300).toFloat()) }
     var enabled by rememberSaveable(existing?.id) { mutableStateOf(existing?.enabled ?: true) }
+    var rateText by rememberSaveable(existing?.id) { mutableStateOf(rate?.let { "%.4f".format(it.priceMicrosPerKwh / 1_000_000.0) }.orEmpty()) }
+    var freeCharging by rememberSaveable(existing?.id) { mutableStateOf(rate?.freeCharging ?: false) }
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
         Column(Modifier.padding(16.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(if (existing == null) "New place" else "Edit place", style = MaterialTheme.typography.titleMedium)
@@ -148,12 +158,36 @@ private fun PlaceEditor(
             )
             Text("Radius ${radius.toInt()} m", style = MaterialTheme.typography.labelLarge)
             Slider(value = radius, onValueChange = { radius = it }, valueRange = 100f..2000f)
+            Text("CHARGING RATE", style = MaterialTheme.typography.labelMedium, color = PerformanceRed, fontWeight = FontWeight.Bold)
+            if (!freeCharging) OutlinedTextField(rateText, { rateText = it }, label = { Text("USD per kWh") }, modifier = Modifier.fillMaxWidth())
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Free charging"); Switch(freeCharging, { freeCharging = it }) }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Enabled"); Switch(enabled, { enabled = it }) }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(enabled = name.isNotBlank(), onClick = { onSave(SmartPlace(existing?.id ?: 0, name, type, latitude, longitude, radius.toInt(), enabled, existing?.createdAt ?: System.currentTimeMillis(), System.currentTimeMillis(), existing?.address)) }) { Text("Save") }
+                Button(enabled = name.isNotBlank(), onClick = {
+                    onSave(SmartPlace(existing?.id ?: 0, name, type, latitude, longitude, radius.toInt(), enabled, existing?.createdAt ?: System.currentTimeMillis(), System.currentTimeMillis(), existing?.address))
+                    existing?.id?.let { placeId ->
+                        val price = rateText.toBigDecimalOrNull()?.movePointRight(6)?.longValueExact() ?: 0
+                        if (freeCharging || rateText.isNotBlank()) onSaveRate(ChargingRateRule(scope = ChargingRateScope.PLACE, smartPlaceId = placeId, name = name, priceMicrosPerKwh = price, currencyCode = "USD", freeCharging = freeCharging, effectiveFrom = if (rate == null) 0 else System.currentTimeMillis(), createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis()))
+                    }
+                }) { Text("Save") }
                 androidx.compose.material3.TextButton(onClick = onCancel) { Text("Cancel") }
                 if (existing != null) IconButton(onClick = onDelete) { Icon(Icons.Default.Delete, "Delete place") }
             }
+        }
+    }
+}
+
+@Composable
+private fun DefaultRateEditor(rate: ChargingRateRule?, onSave: (ChargingRateRule) -> Unit) {
+    var value by rememberSaveable(rate?.id) { mutableStateOf(rate?.let { "%.4f".format(it.priceMicrosPerKwh / 1_000_000.0) }.orEmpty()) }
+    var free by rememberSaveable(rate?.id) { mutableStateOf(rate?.freeCharging ?: false) }
+    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("DEFAULT CHARGING RATE", style = MaterialTheme.typography.labelMedium, color = PerformanceRed, fontWeight = FontWeight.Bold)
+            Text("For locations outside Smart Places", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (!free) OutlinedTextField(value, { value = it }, label = { Text("USD per kWh") }, modifier = Modifier.fillMaxWidth())
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) { Text("Free charging"); Switch(free, { free = it }) }
+            Button(enabled = free || value.toBigDecimalOrNull() != null, onClick = { val price = value.toBigDecimalOrNull()?.movePointRight(6)?.longValueExact() ?: 0; onSave(ChargingRateRule(scope = ChargingRateScope.DEFAULT, name = "Default", priceMicrosPerKwh = price, currencyCode = "USD", freeCharging = free, effectiveFrom = if (rate == null) 0 else System.currentTimeMillis(), createdAt = System.currentTimeMillis(), updatedAt = System.currentTimeMillis())) }) { Text("Save default rate") }
         }
     }
 }

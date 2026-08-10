@@ -13,6 +13,8 @@ import com.matedroid.domain.ChargeComparison
 import com.matedroid.domain.ChargeComparisonRepository
 import com.matedroid.domain.LegRef
 import com.matedroid.domain.TripRepository
+import com.matedroid.domain.ChargeCostPresentation
+import com.matedroid.domain.ChargingCostRepository
 import com.matedroid.domain.model.Trip
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,6 +37,7 @@ data class ChargeDetailUiState(
     val containingTrip: Pair<Long, Trip>? = null,
     val teslamateBaseUrl: String = "",
     val comparison: ChargeComparison? = null
+    , val chargingCost: ChargeCostPresentation? = null
 )
 
 data class ChargeDetailStats(
@@ -67,7 +70,8 @@ class ChargeDetailViewModel @Inject constructor(
     private val repository: TeslamateRepository,
     private val settingsDataStore: SettingsDataStore,
     private val tripRepository: TripRepository,
-    private val chargeComparisonRepository: ChargeComparisonRepository
+    private val chargeComparisonRepository: ChargeComparisonRepository,
+    private val chargingCostRepository: ChargingCostRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ChargeDetailUiState())
@@ -138,6 +142,7 @@ class ChargeDetailViewModel @Inject constructor(
                             error = null
                         )
                     }
+                    refreshChargingCost(detail)
                 }
                 is ApiResult.Error -> {
                     _uiState.update {
@@ -149,6 +154,26 @@ class ChargeDetailViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private fun refreshChargingCost(detail: ChargeDetail? = _uiState.value.chargeDetail) {
+        viewModelScope.launch {
+            detail ?: return@launch
+            _uiState.update { it.copy(chargingCost = chargingCostRepository.costForCharge(detail)) }
+        }
+    }
+
+    fun setManualCost(minorUnits: Long) {
+        val id = chargeId ?: return
+        viewModelScope.launch { chargingCostRepository.setManualCost(id, minorUnits, "USD"); refreshChargingCost() }
+    }
+    fun setManualFree() {
+        val id = chargeId ?: return
+        viewModelScope.launch { chargingCostRepository.setManualFree(id, "USD"); refreshChargingCost() }
+    }
+    fun useAutomaticCost() {
+        val id = chargeId ?: return
+        viewModelScope.launch { chargingCostRepository.useAutomatic(id); refreshChargingCost() }
     }
 
     fun clearError() {

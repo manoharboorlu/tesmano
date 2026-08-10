@@ -40,12 +40,16 @@ import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -83,6 +87,8 @@ import com.matedroid.data.api.models.ChargeDetail
 import com.matedroid.data.api.models.ChargePoint
 import com.matedroid.data.api.models.Units
 import com.matedroid.domain.ChargeComparison
+import com.matedroid.domain.ChargeCostPresentation
+import com.matedroid.domain.ChargeCostEnergyBasis
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.components.FullscreenLineChart
 import com.matedroid.ui.components.MateDroidLoadingPlaceholder
@@ -161,9 +167,13 @@ fun ChargeDetailScreen(
                     exteriorColor = exteriorColor,
                     containingTrip = uiState.containingTrip,
                     comparison = uiState.comparison,
+                    chargingCost = uiState.chargingCost,
                     onCompareClick = { onNavigateToCompare(chargeId) },
                     onNavigateToTripDetail = onNavigateToTripDetail,
                     onRemoveFromTrip = viewModel::removeFromTrip,
+                    onManualCost = viewModel::setManualCost,
+                    onManualFree = viewModel::setManualFree,
+                    onUseAutomaticCost = viewModel::useAutomaticCost,
                     onEditCost = if (teslamateBaseUrl.isNotBlank()) {
                         {
                             val url = "$teslamateBaseUrl/charge-cost/$chargeId"
@@ -187,9 +197,13 @@ private fun ChargeDetailContent(
     exteriorColor: String?,
     containingTrip: Pair<Long, com.matedroid.domain.model.Trip>?,
     comparison: ChargeComparison?,
+    chargingCost: ChargeCostPresentation?,
     onCompareClick: () -> Unit,
     onNavigateToTripDetail: (String) -> Unit,
     onRemoveFromTrip: () -> Unit,
+    onManualCost: (Long) -> Unit,
+    onManualFree: () -> Unit,
+    onUseAutomaticCost: () -> Unit,
     onEditCost: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
@@ -198,6 +212,7 @@ private fun ChargeDetailContent(
     val is24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
     val scrollState = rememberScrollState()
     var sharedXFraction by remember { mutableStateOf<Float?>(null) }
+    var costDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(scrollState) {
         snapshotFlow { scrollState.isScrollInProgress }
@@ -225,6 +240,12 @@ private fun ChargeDetailContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        ChargingCostCard(
+            cost = chargingCost,
+            onOverride = { costDialog = true },
+            onFree = onManualFree,
+            onUseAutomatic = onUseAutomaticCost
+        )
         if (adaptive.supportsTwoPane) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -310,6 +331,42 @@ private fun ChargeDetailContent(
 
         Spacer(modifier = Modifier.height(16.dp))
     }
+    if (costDialog) ManualCostDialog(onDismiss = { costDialog = false }, onSave = { onManualCost(it); costDialog = false })
+}
+
+@Composable
+private fun ChargingCostCard(cost: ChargeCostPresentation?, onOverride: () -> Unit, onFree: () -> Unit, onUseAutomatic: () -> Unit) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(20.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("CHARGING COST", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = ChargingGreen)
+            val value = when {
+                cost == null || (cost.costMinorUnits == null && !cost.isFree) -> "Cost unavailable"
+                cost.isFree -> "Free"
+                else -> "${cost.currencyCode} %.2f".format(cost.costMinorUnits!! / 100.0)
+            }
+            Text(value, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+            when (val basis = cost?.energyBasis) {
+                is ChargeCostEnergyBasis.GridEnergyReported -> Text("${basis.kwh.stripTrailingZeros().toPlainString()} kWh × ${cost.rate?.let { "${it.currencyCode} %.3f/kWh".format(it.priceMicrosPerKwh / 1_000_000.0) } ?: "rate unavailable"} · Grid energy reported", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                is ChargeCostEnergyBasis.BatteryEnergyAdded -> Text("${basis.kwh.stripTrailingZeros().toPlainString()} kWh · Battery energy added; charging losses may not be included", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                null -> Text(if (cost?.isManual == true) "Manual override" else "No applicable rate or reliable energy", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            cost?.place?.let { Text("Rate source · ${it.name}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (cost?.isManual == true) TextButton(onClick = onUseAutomatic) { Text("Use automatic") }
+                else {
+                    TextButton(onClick = onOverride) { Text("Override cost") }
+                    TextButton(onClick = onFree) { Text("Mark free") }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ManualCostDialog(onDismiss: () -> Unit, onSave: (Long) -> Unit) {
+    var value by rememberSaveable { mutableStateOf("") }
+    val minor = value.toBigDecimalOrNull()?.movePointRight(2)?.setScale(0, java.math.RoundingMode.HALF_UP)?.longValueExact()
+    AlertDialog(onDismissRequest = onDismiss, title = { Text("Override charging cost") }, text = { OutlinedTextField(value, { value = it }, label = { Text("Total cost (USD)") }) }, confirmButton = { TextButton(enabled = minor != null && minor >= 0, onClick = { onSave(minor!!) }) { Text("Save") } }, dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 
 @Composable
