@@ -1398,4 +1398,19 @@
         <item quantity="one">%d vergleichbare Ladung in der Nähe</item>
         <item quantity="other">%d vergleichbare Ladungen in der Nähe</item>
     </plurals>
+    <string name="activity_timeline_cached">Zwischengespeicherte Aktivitäten</string>
+    <string name="activity_filter_all">Alle</string>
+    <string name="activity_filter_drives">Fahrten</string>
+    <string name="activity_filter_charges">Ladevorgänge</string>
+    <string name="activity_drive">Fahrt</string>
+    <string name="activity_charge">Laden</string>
+    <string name="activity_no_cached">Noch keine zwischengespeicherten Aktivitäten</string>
+    <string name="activity_no_cached_hint">Zum Aktualisieren ziehen, wenn dein TeslaMate-Server verfügbar ist.</string>
+    <string name="activity_no_filter_results">Keine %1$s in den zwischengespeicherten Aktivitäten</string>
+    <string name="activity_cached_offline">Zwischengespeicherte Aktivitäten werden angezeigt</string>
+    <string name="activity_refreshing">Zwischengespeicherte Aktivitäten werden aktualisiert…</string>
+    <string name="activity_loading_more">Weitere Aktivitäten werden geladen…</string>
+    <string name="activity_unknown_location">Unbekannter Ort</string>
+    <string name="activity_energy_added">%1$s hinzugefügt</string>
+    <string name="activity_soc_range">%1$d%% → %2$d%%</string>
 </resources>

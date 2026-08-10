@@ -20,6 +20,10 @@ interface ChargeSummaryDao {
     @Query("SELECT * FROM charges_summary WHERE carId = :carId ORDER BY startDate ASC")
     suspend fun getAllForCar(carId: Int): List<ChargeSummary>
 
+    /** A bounded newest-first page for dense history surfaces. */
+    @Query("SELECT * FROM charges_summary WHERE carId = :carId ORDER BY startDate DESC LIMIT :limit OFFSET :offset")
+    suspend fun getRecentPageForCar(carId: Int, limit: Int, offset: Int): List<ChargeSummary>
+
     @Query("DELETE FROM charges_summary WHERE carId = :carId")
     suspend fun deleteAllForCar(carId: Int)
 

@@ -21,6 +21,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.matedroid.R
 import com.matedroid.ui.screens.battery.BatteryScreen
+import com.matedroid.ui.screens.activity.ActivityTimelineScreen
 import com.matedroid.ui.screens.charges.ChargeDetailScreen
 import com.matedroid.ui.screens.charges.ChargesScreen
 import com.matedroid.ui.screens.charges.CompareChargesScreen
@@ -59,6 +60,9 @@ sealed interface Screen {
 
     @Serializable
     data object Dashboard : Screen
+
+    @Serializable
+    data class Activity(val carId: Int, val exteriorColor: String? = null) : Screen
 
     @Serializable
     data object PalettePreview : Screen
@@ -176,6 +180,7 @@ fun NavGraph(
                     "current_charge" -> Screen.CurrentCharge(carId, exteriorColor)
                     "charges" -> Screen.Charges(carId, exteriorColor)
                     "drives" -> Screen.Drives(carId, exteriorColor)
+                    "activity" -> Screen.Activity(carId, exteriorColor)
                     "mileage" -> Screen.Mileage(carId, exteriorColor)
                     "battery" -> Screen.Battery(carId, exteriorColor = exteriorColor)
                     "stats" -> Screen.Stats(carId, exteriorColor)
@@ -217,10 +222,10 @@ fun NavGraph(
                     navController.navigate(Screen.Settings)
                 },
                 onNavigateToCharges = { carId, exteriorColor ->
-                    navController.navigate(Screen.Charges(carId, exteriorColor))
+                    navController.navigate(Screen.Activity(carId, exteriorColor))
                 },
                 onNavigateToDrives = { carId, exteriorColor ->
-                    navController.navigate(Screen.Drives(carId, exteriorColor))
+                    navController.navigate(Screen.Activity(carId, exteriorColor))
                 },
                 onNavigateToBattery = { carId, efficiency, exteriorColor ->
                     navController.navigate(Screen.Battery(carId, efficiency?.toFloat() ?: 0f, exteriorColor))
@@ -245,6 +250,20 @@ fun NavGraph(
                 },
                 onNavigateToTrips = { carId, exteriorColor ->
                     navController.navigate(Screen.Trips(carId, exteriorColor))
+                }
+            )
+        }
+
+        composable<Screen.Activity> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.Activity>()
+            ActivityTimelineScreen(
+                carId = route.carId,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDriveDetail = { driveId ->
+                    navController.navigate(Screen.DriveDetail(route.carId, driveId, route.exteriorColor))
+                },
+                onNavigateToChargeDetail = { chargeId ->
+                    navController.navigate(Screen.ChargeDetail(route.carId, chargeId, route.exteriorColor))
                 }
             )
         }

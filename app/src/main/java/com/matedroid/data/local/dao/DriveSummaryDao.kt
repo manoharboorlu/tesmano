@@ -27,6 +27,10 @@ interface DriveSummaryDao {
     @Query("SELECT * FROM drives_summary WHERE carId = :carId ORDER BY startDate ASC")
     suspend fun getAllChronological(carId: Int): List<DriveSummary>
 
+    /** A bounded newest-first page for dense history surfaces. */
+    @Query("SELECT * FROM drives_summary WHERE carId = :carId ORDER BY startDate DESC LIMIT :limit OFFSET :offset")
+    suspend fun getRecentPageForCar(carId: Int, limit: Int, offset: Int): List<DriveSummary>
+
     // === Quick Stats Queries ===
 
     // Total count

@@ -292,6 +292,21 @@
     <!-- ==================== Drives Screen ==================== -->
     <!-- Top bar title -->
     <string name="drives_title">Drives</string>
+    <string name="activity_timeline_cached">Cached activity timeline</string>
+    <string name="activity_filter_all">All</string>
+    <string name="activity_filter_drives">Drives</string>
+    <string name="activity_filter_charges">Charges</string>
+    <string name="activity_drive">Drive</string>
+    <string name="activity_charge">Charge</string>
+    <string name="activity_no_cached">No cached activity yet</string>
+    <string name="activity_no_cached_hint">Pull to refresh when your TeslaMate server is available.</string>
+    <string name="activity_no_filter_results">No %1$s in cached activity</string>
+    <string name="activity_cached_offline">Showing cached activity</string>
+    <string name="activity_refreshing">Refreshing cached activity…</string>
+    <string name="activity_loading_more">Loading more activity…</string>
+    <string name="activity_unknown_location">Unknown location</string>
+    <string name="activity_energy_added">%1$s added</string>
+    <string name="activity_soc_range">%1$d%% → %2$d%%</string>
 
     <!-- Content description for back button -->
     <string name="back">Back</string>

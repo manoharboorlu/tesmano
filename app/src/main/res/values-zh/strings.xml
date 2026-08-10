@@ -1305,4 +1305,19 @@
     <plurals name="compare_sessions_nearby">
         <item quantity="other">附近 %d 次可比充电</item>
     </plurals>
+    <string name="activity_timeline_cached">已缓存的活动时间线</string>
+    <string name="activity_filter_all">全部</string>
+    <string name="activity_filter_drives">行程</string>
+    <string name="activity_filter_charges">充电</string>
+    <string name="activity_drive">行程</string>
+    <string name="activity_charge">充电</string>
+    <string name="activity_no_cached">尚无缓存活动</string>
+    <string name="activity_no_cached_hint">TeslaMate 服务器可用时，下拉即可刷新。</string>
+    <string name="activity_no_filter_results">缓存活动中没有%1$s</string>
+    <string name="activity_cached_offline">正在显示缓存活动</string>
+    <string name="activity_refreshing">正在刷新缓存活动…</string>
+    <string name="activity_loading_more">正在加载更多活动…</string>
+    <string name="activity_unknown_location">未知位置</string>
+    <string name="activity_energy_added">已增加 %1$s</string>
+    <string name="activity_soc_range">%1$d%% → %2$d%%</string>
 </resources>
