@@ -153,10 +153,12 @@ object ChargingCostAnalyticsCalculator {
     }
 
     private fun parseDate(value: String, zone: ZoneId): LocalDate? = runCatching { Instant.parse(value).atZone(zone).toLocalDate() }.getOrNull()
-    private fun categoryFor(place: SmartPlace?): String = when (place?.type) {
-        SmartPlaceType.HOME -> "Home"
-        SmartPlaceType.WORK -> "Work"
-        SmartPlaceType.CUSTOM -> "Custom"
-        else -> "Other"
-    }
+}
+
+/** Shared Home/Work/Custom/Other labeling, reused by both Cost Analytics and the Charging Lab. */
+internal fun categoryFor(place: SmartPlace?): String = when (place?.type) {
+    SmartPlaceType.HOME -> "Home"
+    SmartPlaceType.WORK -> "Work"
+    SmartPlaceType.CUSTOM -> "Custom"
+    else -> "Other"
 }

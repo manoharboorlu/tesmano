@@ -13,6 +13,7 @@ import com.matedroid.data.api.models.DriveDetail
 import com.matedroid.data.local.dao.AggregateDao
 import com.matedroid.data.local.dao.ChargeSummaryDao
 import com.matedroid.data.local.dao.DriveSummaryDao
+import com.matedroid.data.local.entity.ChargeCurveAggregate
 import com.matedroid.data.local.entity.ChargeDetailAggregate
 import com.matedroid.data.local.entity.ChargeSummary
 import com.matedroid.data.local.entity.DriveDetailAggregate
@@ -21,6 +22,9 @@ import com.matedroid.data.local.entity.SchemaVersion
 import com.matedroid.data.repository.ApiResult
 import com.matedroid.data.repository.GeocodingRepository
 import com.matedroid.data.repository.TeslamateRepository
+import com.matedroid.domain.ChargeCurveSample
+import com.matedroid.domain.computeChargeCurve
+import com.matedroid.domain.toEntity
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -279,11 +283,14 @@ class SyncRepository @Inject constructor(
 
             // Process results and collect successful aggregates
             val aggregates = mutableListOf<ChargeDetailAggregate>()
+            val curveAggregates = mutableListOf<ChargeCurveAggregate>()
             for ((chargeId, result) in results) {
                 when (result) {
                     is ApiResult.Success -> {
                         val aggregate = computeChargeAggregate(carId, result.data)
                         aggregates.add(aggregate)
+                        // Reuses the detail already fetched above for the base aggregate — no extra network call.
+                        computeChargeCurveFromDetail(result.data)?.let { curveAggregates.add(it.toEntity(chargeId, carId, System.currentTimeMillis())) }
 
                         // Get location from charge summary for geocoding (preloaded above)
                         val summary = summariesById[chargeId]
@@ -302,6 +309,7 @@ class SyncRepository @Inject constructor(
             if (aggregates.isNotEmpty()) {
                 aggregateDao.upsertChargeAggregates(aggregates)
             }
+            curveAggregates.forEach { aggregateDao.upsertChargeCurveAggregate(it) }
 
             // Enqueue this batch's locations immediately (survives interruption)
             if (batchLocations.isNotEmpty()) {
@@ -437,6 +445,19 @@ class SyncRepository @Inject constructor(
             endLongitude = endLongitude
         )
     }
+
+    /**
+     * Derives a compact power-vs-SOC curve summary from the same [ChargeDetail] response already
+     * fetched for [computeChargeAggregate] — no additional network call.
+     */
+    private fun computeChargeCurveFromDetail(detail: ChargeDetail) =
+        computeChargeCurve(
+            (detail.chargePoints ?: emptyList()).mapNotNull { point ->
+                val soc = point.batteryLevel ?: return@mapNotNull null
+                val power = point.chargerPower ?: return@mapNotNull null
+                ChargeCurveSample(soc, power.toDouble())
+            }
+        )
 
     /**
      * Compute aggregates from charge detail points.

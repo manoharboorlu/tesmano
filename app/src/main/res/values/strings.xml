@@ -1638,4 +1638,40 @@
     <string name="efficiency_context_better">%1$s better than recent average</string>
     <!-- This drive is worse than the 30-day average by %1$s (a formatted Wh/unit amount) -->
     <string name="efficiency_context_worse">%1$s worse than recent average</string>
+
+    <!-- Phase 9B: Charging Lab -->
+    <string name="charging_lab_title">Charging Lab</string>
+    <string name="charging_lab_menu_item">Charging lab</string>
+    <string name="charging_no_data">No charging sessions in this period.</string>
+    <string name="charging_quality_coverage">%1$d of %2$d sessions with reported charging efficiency</string>
+    <string name="charging_sessions_label">Sessions</string>
+    <string name="charging_battery_energy">Battery energy added</string>
+    <string name="charging_peak_power">Peak power</string>
+    <string name="charging_avg_duration">Avg. duration</string>
+    <string name="charging_avg_rate">Avg. charging rate</string>
+    <string name="charging_total_cost">Total cost</string>
+    <string name="charging_effective_rate">Effective rate %1$s/kWh</string>
+    <string name="charging_cost_unavailable">Unavailable</string>
+    <string name="charging_trend_title">Charging trend</string>
+    <string name="charging_place_title">By location</string>
+    <string name="charging_acdc_title">AC vs DC</string>
+    <string name="charging_acdc_sparse">AC/DC classification available for only %1$d of %2$d sessions — not enough to compare</string>
+    <string name="charging_soc_title">Charging by starting battery level</string>
+    <string name="charging_curve_title">Charging curve</string>
+    <string name="charging_curve_unavailable">No cached charging curve data yet — open a session\'s Charge Detail to build coverage</string>
+    <plurals name="charging_curve_coverage">
+        <item quantity="one">Charging curve available from %1$d cached session</item>
+        <item quantity="other">Charging curve available from %1$d cached sessions</item>
+    </plurals>
+    <string name="charging_taper_title">Observed taper</string>
+    <string name="charging_fastest">Fastest charging</string>
+    <string name="charging_most_efficient">Most efficient</string>
+    <string name="charging_largest_energy">Largest energy added</string>
+    <string name="charging_longest_session">Longest session</string>
+    <string name="charging_context_title">Charging context</string>
+    <string name="charging_context_this_session">This session</string>
+    <string name="charging_context_30day_avg">30-day average</string>
+    <string name="charging_context_personal_avg">Personal average</string>
+    <string name="charging_context_better">%1$s better than recent average</string>
+    <string name="charging_context_worse">%1$s worse than recent average</string>
 </resources>

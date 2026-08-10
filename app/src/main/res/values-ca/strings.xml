@@ -1476,4 +1476,40 @@
     <string name="efficiency_context_personal_avg">Mitjana personal</string>
     <string name="efficiency_context_better">%1$s millor que la mitjana recent</string>
     <string name="efficiency_context_worse">%1$s pitjor que la mitjana recent</string>
+
+    <!-- Phase 9B: Charging Lab -->
+    <string name="charging_lab_title">Laboratori de càrrega</string>
+    <string name="charging_lab_menu_item">Laboratori de càrrega</string>
+    <string name="charging_no_data">No hi ha sessions de càrrega en aquest període.</string>
+    <string name="charging_quality_coverage">%1$d de %2$d sessions amb eficiència de càrrega reportada</string>
+    <string name="charging_sessions_label">Sessions</string>
+    <string name="charging_battery_energy">Energia de bateria afegida</string>
+    <string name="charging_peak_power">Potència màxima</string>
+    <string name="charging_avg_duration">Durada mitjana</string>
+    <string name="charging_avg_rate">Velocitat mitjana de càrrega</string>
+    <string name="charging_total_cost">Cost total</string>
+    <string name="charging_effective_rate">Tarifa efectiva %1$s/kWh</string>
+    <string name="charging_cost_unavailable">No disponible</string>
+    <string name="charging_trend_title">Tendència de càrrega</string>
+    <string name="charging_place_title">Per ubicació</string>
+    <string name="charging_acdc_title">AC vs DC</string>
+    <string name="charging_acdc_sparse">Classificació AC/DC disponible només per a %1$d de %2$d sessions — insuficient per comparar</string>
+    <string name="charging_soc_title">Càrrega per nivell de bateria inicial</string>
+    <string name="charging_curve_title">Corba de càrrega</string>
+    <string name="charging_curve_unavailable">Encara no hi ha dades de corba de càrrega en memòria cau — obre el detall d\'una sessió per començar a acumular-les</string>
+    <plurals name="charging_curve_coverage">
+        <item quantity="one">Corba de càrrega disponible a partir de %1$d sessió en memòria cau</item>
+        <item quantity="other">Corba de càrrega disponible a partir de %1$d sessions en memòria cau</item>
+    </plurals>
+    <string name="charging_taper_title">Reducció observada</string>
+    <string name="charging_fastest">Càrrega més ràpida</string>
+    <string name="charging_most_efficient">Més eficient</string>
+    <string name="charging_largest_energy">Més energia afegida</string>
+    <string name="charging_longest_session">Sessió més llarga</string>
+    <string name="charging_context_title">Context de càrrega</string>
+    <string name="charging_context_this_session">Aquesta sessió</string>
+    <string name="charging_context_30day_avg">Mitjana de 30 dies</string>
+    <string name="charging_context_personal_avg">Mitjana personal</string>
+    <string name="charging_context_better">%1$s millor que la mitjana recent</string>
+    <string name="charging_context_worse">%1$s pitjor que la mitjana recent</string>
 </resources>

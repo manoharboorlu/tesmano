@@ -42,6 +42,7 @@ import com.matedroid.ui.screens.stats.RegionsVisitedScreen
 import com.matedroid.ui.screens.stats.StatsScreen
 import com.matedroid.ui.screens.sentry.SentryHistoryScreen
 import com.matedroid.ui.screens.efficiency.EfficiencyLabScreen
+import com.matedroid.ui.screens.charging.ChargingLabScreen
 import com.matedroid.ui.screens.tripmap.TripMapScreen
 import com.matedroid.ui.screens.trips.CreateTripScreen
 import com.matedroid.ui.screens.trips.TripDetailScreen
@@ -150,6 +151,8 @@ sealed interface Screen {
 
     @Serializable
     data class EfficiencyLab(val carId: Int, val exteriorColor: String? = null) : Screen
+    @Serializable
+    data class ChargingLab(val carId: Int, val exteriorColor: String? = null) : Screen
 }
 
 @Composable
@@ -285,6 +288,9 @@ fun NavGraph(
                 onNavigateToEfficiencyLab = { carId, exteriorColor ->
                     navController.navigate(Screen.EfficiencyLab(carId, exteriorColor))
                 },
+                onNavigateToChargingLab = { carId, exteriorColor ->
+                    navController.navigate(Screen.ChargingLab(carId, exteriorColor))
+                },
                 onNavigateToCurrentCharge = { carId, exteriorColor ->
                     navController.navigate(Screen.CurrentCharge(carId, exteriorColor))
                 },
@@ -344,6 +350,18 @@ fun NavGraph(
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToDriveDetail = { driveId ->
                     navController.navigate(Screen.DriveDetail(route.carId, driveId, route.exteriorColor))
+                }
+            )
+        }
+
+        composable<Screen.ChargingLab> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.ChargingLab>()
+            ChargingLabScreen(
+                carId = route.carId,
+                exteriorColor = route.exteriorColor,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToChargeDetail = { chargeId ->
+                    navController.navigate(Screen.ChargeDetail(route.carId, chargeId, route.exteriorColor))
                 }
             )
         }

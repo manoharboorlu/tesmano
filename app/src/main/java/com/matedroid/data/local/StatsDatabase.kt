@@ -18,6 +18,7 @@ import com.matedroid.data.local.dao.SmartPlacesDao
 import com.matedroid.data.local.dao.TripCountryCacheDao
 import com.matedroid.data.local.dao.TripRouteCacheDao
 import com.matedroid.data.local.dao.RouteTagsDao
+import com.matedroid.data.local.entity.ChargeCurveAggregate
 import com.matedroid.data.local.entity.ChargeDetailAggregate
 import com.matedroid.data.local.entity.ChargeSummary
 import com.matedroid.data.local.entity.ChargingRateRule
@@ -76,9 +77,10 @@ import com.matedroid.data.local.entity.RecurringRouteMetadata
         ChargeCostOverride::class,
         UserDriveTag::class,
         DriveManualTag::class,
-        RecurringRouteMetadata::class
+        RecurringRouteMetadata::class,
+        ChargeCurveAggregate::class
     ],
-    version = 17,
+    version = 18,
     exportSchema = true
 )
 abstract class StatsDatabase : RoomDatabase() {
@@ -433,6 +435,36 @@ abstract class StatsDatabase : RoomDatabase() {
             }
         }
 
-        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17)
+        /** Migration from V17 to V18: opportunistic charge power-vs-SOC curve cache (Charging Lab). */
+        val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS charge_curve_aggregates (
+                        chargeId INTEGER PRIMARY KEY NOT NULL,
+                        carId INTEGER NOT NULL,
+                        schemaVersion INTEGER NOT NULL,
+                        computedAt INTEGER NOT NULL,
+                        sampleCount INTEGER NOT NULL,
+                        peakPowerKw REAL,
+                        peakPowerSoc INTEGER,
+                        taperStartSoc INTEGER,
+                        band0to10 REAL,
+                        band10to20 REAL,
+                        band20to30 REAL,
+                        band30to40 REAL,
+                        band40to50 REAL,
+                        band50to60 REAL,
+                        band60to70 REAL,
+                        band70to80 REAL,
+                        band80to90 REAL,
+                        band90to100 REAL,
+                        FOREIGN KEY (chargeId) REFERENCES charges_summary(chargeId) ON DELETE CASCADE
+                    )
+                """)
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_charge_curve_aggregates_carId ON charge_curve_aggregates (carId)")
+            }
+        }
+
+        val ALL_MIGRATIONS = arrayOf(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9, MIGRATION_9_10, MIGRATION_10_11, MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15, MIGRATION_15_16, MIGRATION_16_17, MIGRATION_17_18)
     }
 }

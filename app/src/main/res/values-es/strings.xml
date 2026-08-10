@@ -1476,4 +1476,40 @@
     <string name="efficiency_context_personal_avg">Promedio personal</string>
     <string name="efficiency_context_better">%1$s mejor que el promedio reciente</string>
     <string name="efficiency_context_worse">%1$s peor que el promedio reciente</string>
+
+    <!-- Phase 9B: Charging Lab -->
+    <string name="charging_lab_title">Laboratorio de carga</string>
+    <string name="charging_lab_menu_item">Laboratorio de carga</string>
+    <string name="charging_no_data">No hay sesiones de carga en este período.</string>
+    <string name="charging_quality_coverage">%1$d de %2$d sesiones con eficiencia de carga reportada</string>
+    <string name="charging_sessions_label">Sesiones</string>
+    <string name="charging_battery_energy">Energía de batería añadida</string>
+    <string name="charging_peak_power">Potencia máxima</string>
+    <string name="charging_avg_duration">Duración media</string>
+    <string name="charging_avg_rate">Velocidad media de carga</string>
+    <string name="charging_total_cost">Costo total</string>
+    <string name="charging_effective_rate">Tarifa efectiva %1$s/kWh</string>
+    <string name="charging_cost_unavailable">No disponible</string>
+    <string name="charging_trend_title">Tendencia de carga</string>
+    <string name="charging_place_title">Por ubicación</string>
+    <string name="charging_acdc_title">AC vs DC</string>
+    <string name="charging_acdc_sparse">Clasificación AC/DC disponible solo para %1$d de %2$d sesiones — insuficiente para comparar</string>
+    <string name="charging_soc_title">Carga por nivel de batería inicial</string>
+    <string name="charging_curve_title">Curva de carga</string>
+    <string name="charging_curve_unavailable">Aún no hay datos de curva de carga en caché — abre el detalle de una sesión para empezar a acumularlos</string>
+    <plurals name="charging_curve_coverage">
+        <item quantity="one">Curva de carga disponible a partir de %1$d sesión en caché</item>
+        <item quantity="other">Curva de carga disponible a partir de %1$d sesiones en caché</item>
+    </plurals>
+    <string name="charging_taper_title">Reducción observada</string>
+    <string name="charging_fastest">Carga más rápida</string>
+    <string name="charging_most_efficient">Más eficiente</string>
+    <string name="charging_largest_energy">Mayor energía añadida</string>
+    <string name="charging_longest_session">Sesión más larga</string>
+    <string name="charging_context_title">Contexto de carga</string>
+    <string name="charging_context_this_session">Esta sesión</string>
+    <string name="charging_context_30day_avg">Promedio de 30 días</string>
+    <string name="charging_context_personal_avg">Promedio personal</string>
+    <string name="charging_context_better">%1$s mejor que el promedio reciente</string>
+    <string name="charging_context_worse">%1$s peor que el promedio reciente</string>
 </resources>

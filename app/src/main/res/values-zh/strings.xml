@@ -1498,4 +1498,40 @@
     <string name="efficiency_context_personal_avg">个人平均值</string>
     <string name="efficiency_context_better">比近期平均值高效 %1$s</string>
     <string name="efficiency_context_worse">比近期平均值低效 %1$s</string>
+
+    <!-- Phase 9B: Charging Lab -->
+    <string name="charging_lab_title">充电实验室</string>
+    <string name="charging_lab_menu_item">充电实验室</string>
+    <string name="charging_no_data">此时段没有充电记录。</string>
+    <string name="charging_quality_coverage">%2$d 次充电中有 %1$d 次上报的充电效率数据</string>
+    <string name="charging_sessions_label">充电次数</string>
+    <string name="charging_battery_energy">电池增加电量</string>
+    <string name="charging_peak_power">峰值功率</string>
+    <string name="charging_avg_duration">平均时长</string>
+    <string name="charging_avg_rate">平均充电速率</string>
+    <string name="charging_total_cost">总费用</string>
+    <string name="charging_effective_rate">实际电价 %1$s/kWh</string>
+    <string name="charging_cost_unavailable">不可用</string>
+    <string name="charging_trend_title">充电趋势</string>
+    <string name="charging_place_title">按地点</string>
+    <string name="charging_acdc_title">交流 vs 直流</string>
+    <string name="charging_acdc_sparse">仅 %2$d 次充电中的 %1$d 次可分类交流/直流 — 数据不足以比较</string>
+    <string name="charging_soc_title">按起始电量充电</string>
+    <string name="charging_curve_title">充电曲线</string>
+    <string name="charging_curve_unavailable">尚无缓存的充电曲线数据 — 打开一次充电详情以开始积累数据</string>
+    <plurals name="charging_curve_coverage">
+        <item quantity="one">充电曲线数据来自 %1$d 次缓存的充电记录</item>
+        <item quantity="other">充电曲线数据来自 %1$d 次缓存的充电记录</item>
+    </plurals>
+    <string name="charging_taper_title">观察到的功率衰减</string>
+    <string name="charging_fastest">充电最快</string>
+    <string name="charging_most_efficient">效率最高</string>
+    <string name="charging_largest_energy">增加电量最多</string>
+    <string name="charging_longest_session">充电时间最长</string>
+    <string name="charging_context_title">充电背景</string>
+    <string name="charging_context_this_session">本次充电</string>
+    <string name="charging_context_30day_avg">30 天平均值</string>
+    <string name="charging_context_personal_avg">个人平均值</string>
+    <string name="charging_context_better">比近期平均值高效 %1$s</string>
+    <string name="charging_context_worse">比近期平均值低效 %1$s</string>
 </resources>

@@ -1476,4 +1476,40 @@
     <string name="efficiency_context_personal_avg">Media personale</string>
     <string name="efficiency_context_better">%1$s meglio della media recente</string>
     <string name="efficiency_context_worse">%1$s peggio della media recente</string>
+
+    <!-- Phase 9B: Charging Lab -->
+    <string name="charging_lab_title">Laboratorio di ricarica</string>
+    <string name="charging_lab_menu_item">Laboratorio di ricarica</string>
+    <string name="charging_no_data">Nessuna sessione di ricarica in questo periodo.</string>
+    <string name="charging_quality_coverage">%1$d di %2$d sessioni con efficienza di ricarica riportata</string>
+    <string name="charging_sessions_label">Sessioni</string>
+    <string name="charging_battery_energy">Energia della batteria aggiunta</string>
+    <string name="charging_peak_power">Potenza di picco</string>
+    <string name="charging_avg_duration">Durata media</string>
+    <string name="charging_avg_rate">Velocità media di ricarica</string>
+    <string name="charging_total_cost">Costo totale</string>
+    <string name="charging_effective_rate">Tariffa effettiva %1$s/kWh</string>
+    <string name="charging_cost_unavailable">Non disponibile</string>
+    <string name="charging_trend_title">Andamento della ricarica</string>
+    <string name="charging_place_title">Per posizione</string>
+    <string name="charging_acdc_title">AC vs DC</string>
+    <string name="charging_acdc_sparse">Classificazione AC/DC disponibile solo per %1$d di %2$d sessioni — non sufficiente per un confronto</string>
+    <string name="charging_soc_title">Ricarica per livello di batteria iniziale</string>
+    <string name="charging_curve_title">Curva di ricarica</string>
+    <string name="charging_curve_unavailable">Nessun dato di curva di ricarica ancora in cache — apri il dettaglio di una sessione per iniziare a raccoglierli</string>
+    <plurals name="charging_curve_coverage">
+        <item quantity="one">Curva di ricarica disponibile da %1$d sessione in cache</item>
+        <item quantity="other">Curva di ricarica disponibile da %1$d sessioni in cache</item>
+    </plurals>
+    <string name="charging_taper_title">Calo osservato</string>
+    <string name="charging_fastest">Ricarica più veloce</string>
+    <string name="charging_most_efficient">Più efficiente</string>
+    <string name="charging_largest_energy">Maggiore energia aggiunta</string>
+    <string name="charging_longest_session">Sessione più lunga</string>
+    <string name="charging_context_title">Contesto di ricarica</string>
+    <string name="charging_context_this_session">Questa sessione</string>
+    <string name="charging_context_30day_avg">Media a 30 giorni</string>
+    <string name="charging_context_personal_avg">Media personale</string>
+    <string name="charging_context_better">%1$s meglio della media recente</string>
+    <string name="charging_context_worse">%1$s peggio della media recente</string>
 </resources>

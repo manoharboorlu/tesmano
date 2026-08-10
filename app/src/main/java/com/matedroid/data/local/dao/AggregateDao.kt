@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.matedroid.data.local.entity.ChargeCurveAggregate
 import com.matedroid.data.local.entity.ChargeDetailAggregate
 import com.matedroid.data.local.entity.ChargeSummary
 import com.matedroid.data.local.entity.DriveDetailAggregate
@@ -44,6 +45,20 @@ interface AggregateDao {
 
     @Query("DELETE FROM charge_detail_aggregates WHERE carId = :carId")
     suspend fun deleteChargeAggregatesForCar(carId: Int)
+
+    // === Charge Curve Aggregates (power vs SOC, opportunistically cached — see ChargingLab.kt) ===
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertChargeCurveAggregate(aggregate: ChargeCurveAggregate)
+
+    @Query("SELECT * FROM charge_curve_aggregates WHERE chargeId = :chargeId")
+    suspend fun getChargeCurveAggregate(chargeId: Int): ChargeCurveAggregate?
+
+    @Query("SELECT * FROM charge_curve_aggregates WHERE carId = :carId")
+    suspend fun getChargeCurveAggregatesForCar(carId: Int): List<ChargeCurveAggregate>
+
+    @Query("SELECT COUNT(*) FROM charge_curve_aggregates WHERE carId = :carId")
+    suspend fun countChargeCurveAggregates(carId: Int): Int
 
     // === Deep Stats: Elevation ===
 

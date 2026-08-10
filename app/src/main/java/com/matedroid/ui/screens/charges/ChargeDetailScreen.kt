@@ -99,6 +99,7 @@ import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
 import com.matedroid.ui.theme.ChargingGreen
 import com.matedroid.ui.theme.PerformanceRed
+import com.matedroid.ui.theme.StatusSuccess
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -168,6 +169,7 @@ fun ChargeDetailScreen(
                     containingTrip = uiState.containingTrip,
                     comparison = uiState.comparison,
                     chargingCost = uiState.chargingCost,
+                    chargingContext = uiState.chargingContext,
                     onCompareClick = { onNavigateToCompare(chargeId) },
                     onNavigateToTripDetail = onNavigateToTripDetail,
                     onRemoveFromTrip = viewModel::removeFromTrip,
@@ -198,6 +200,7 @@ private fun ChargeDetailContent(
     containingTrip: Pair<Long, com.matedroid.domain.model.Trip>?,
     comparison: ChargeComparison?,
     chargingCost: ChargeCostPresentation?,
+    chargingContext: ChargingContext?,
     onCompareClick: () -> Unit,
     onNavigateToTripDetail: (String) -> Unit,
     onRemoveFromTrip: () -> Unit,
@@ -261,6 +264,7 @@ private fun ChargeDetailContent(
                     palette = palette,
                     is24Hour = is24Hour,
                     comparison = comparison,
+                    chargingContext = chargingContext,
                     onCompareClick = onCompareClick,
                     onEditCost = onEditCost,
                     modifier = Modifier.weight(1f)
@@ -287,6 +291,7 @@ private fun ChargeDetailContent(
                 palette = palette,
                 is24Hour = is24Hour,
                 comparison = comparison,
+                chargingContext = chargingContext,
                 onCompareClick = onCompareClick,
                 onEditCost = onEditCost
             )
@@ -379,6 +384,7 @@ private fun ChargeSummaryColumn(
     palette: CarColorPalette,
     is24Hour: Boolean,
     comparison: ChargeComparison?,
+    chargingContext: ChargingContext?,
     onCompareClick: () -> Unit,
     onEditCost: (() -> Unit)?,
     modifier: Modifier = Modifier
@@ -408,9 +414,55 @@ private fun ChargeSummaryColumn(
             }
         }
         stats?.let { ChargeStatTiles(stats = it, units = units, palette = palette) }
+        chargingContext?.let { ChargingContextCard(it) }
         comparison?.takeIf { isDcCharge == true }?.let {
             ChargeCompareCard(comparison = it, palette = palette, onClick = onCompareClick)
         }
+    }
+}
+
+@Composable
+private fun ChargingContextCard(context: ChargingContext) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(20.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                stringResource(R.string.charging_context_title).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = ChargingGreen
+            )
+            Spacer(Modifier.height(4.dp))
+            ChargingContextRow(
+                stringResource(R.string.charging_context_this_session),
+                context.thisSessionEfficiencyPercent?.let { "%.1f%%".format(it) } ?: stringResource(R.string.unknown)
+            )
+            context.last30DayEfficiencyPercent?.let {
+                ChargingContextRow(stringResource(R.string.charging_context_30day_avg), "%.1f%%".format(it))
+            }
+            context.personalEfficiencyPercent?.let {
+                ChargingContextRow(stringResource(R.string.charging_context_personal_avg), "%.1f%%".format(it))
+            }
+            val thisSession = context.thisSessionEfficiencyPercent
+            val reference = context.last30DayEfficiencyPercent ?: context.personalEfficiencyPercent
+            if (thisSession != null && reference != null) {
+                val delta = thisSession - reference
+                val better = delta >= 0
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(if (better) R.string.charging_context_better else R.string.charging_context_worse, "%.1f%%".format(kotlin.math.abs(delta))),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (better) StatusSuccess else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChargingContextRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
     }
 }
 

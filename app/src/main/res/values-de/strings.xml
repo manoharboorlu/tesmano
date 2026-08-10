@@ -1591,4 +1591,40 @@
     <string name="efficiency_context_personal_avg">Persönlicher Durchschnitt</string>
     <string name="efficiency_context_better">%1$s besser als der letzte Durchschnitt</string>
     <string name="efficiency_context_worse">%1$s schlechter als der letzte Durchschnitt</string>
+
+    <!-- Phase 9B: Charging Lab -->
+    <string name="charging_lab_title">Lade-Labor</string>
+    <string name="charging_lab_menu_item">Lade-Labor</string>
+    <string name="charging_no_data">Keine Ladevorgänge in diesem Zeitraum.</string>
+    <string name="charging_quality_coverage">%1$d von %2$d Ladevorgängen mit gemeldeter Ladeeffizienz</string>
+    <string name="charging_sessions_label">Ladevorgänge</string>
+    <string name="charging_battery_energy">Hinzugefügte Batterieenergie</string>
+    <string name="charging_peak_power">Spitzenleistung</string>
+    <string name="charging_avg_duration">Durchschn. Dauer</string>
+    <string name="charging_avg_rate">Durchschn. Laderate</string>
+    <string name="charging_total_cost">Gesamtkosten</string>
+    <string name="charging_effective_rate">Effektiver Tarif %1$s/kWh</string>
+    <string name="charging_cost_unavailable">Nicht verfügbar</string>
+    <string name="charging_trend_title">Ladeverlauf</string>
+    <string name="charging_place_title">Nach Standort</string>
+    <string name="charging_acdc_title">AC vs. DC</string>
+    <string name="charging_acdc_sparse">AC/DC-Klassifizierung nur für %1$d von %2$d Ladevorgängen verfügbar — nicht genug für einen Vergleich</string>
+    <string name="charging_soc_title">Laden nach Start-Akkustand</string>
+    <string name="charging_curve_title">Ladekurve</string>
+    <string name="charging_curve_unavailable">Noch keine zwischengespeicherten Ladekurvendaten — öffne die Ladedetails einer Sitzung, um Daten zu sammeln</string>
+    <plurals name="charging_curve_coverage">
+        <item quantity="one">Ladekurve verfügbar aus %1$d zwischengespeichertem Ladevorgang</item>
+        <item quantity="other">Ladekurve verfügbar aus %1$d zwischengespeicherten Ladevorgängen</item>
+    </plurals>
+    <string name="charging_taper_title">Beobachtete Leistungsreduktion</string>
+    <string name="charging_fastest">Schnellstes Laden</string>
+    <string name="charging_most_efficient">Effizientestes Laden</string>
+    <string name="charging_largest_energy">Meiste hinzugefügte Energie</string>
+    <string name="charging_longest_session">Längster Ladevorgang</string>
+    <string name="charging_context_title">Ladekontext</string>
+    <string name="charging_context_this_session">Dieser Ladevorgang</string>
+    <string name="charging_context_30day_avg">30-Tage-Durchschnitt</string>
+    <string name="charging_context_personal_avg">Persönlicher Durchschnitt</string>
+    <string name="charging_context_better">%1$s besser als der letzte Durchschnitt</string>
+    <string name="charging_context_worse">%1$s schlechter als der letzte Durchschnitt</string>
 </resources>
