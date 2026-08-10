@@ -2,9 +2,11 @@ package com.matedroid.util
 
 import android.content.res.Resources
 import com.matedroid.R
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.time.format.FormatStyle
@@ -32,6 +34,27 @@ fun parseIsoDateTime(dateStr: String?): LocalDateTime? {
         }
     } catch (_: Exception) {
         null
+    }
+}
+
+/**
+ * Parses an ISO-8601 datetime string as a true instant — honoring its offset rather than
+ * discarding it — and converts to [zoneId] for correct real-world local display.
+ *
+ * TeslaMate's configured container timezone (the offset actually present on stored timestamps)
+ * is not necessarily the device's zone, so [parseIsoDateTime]'s offset-discarding behavior can
+ * misrepresent the true local time. Use this whenever the result is shown as a clock time or
+ * used to sort/group events chronologically.
+ *
+ * Examples (device zone = America/New_York, EDT = UTC-4):
+ *   "2026-08-06T13:46:31+02:00" → 2026-08-06T07:46:31 (not the naive "13:46:31")
+ */
+fun parseInstantAware(dateStr: String?, zoneId: ZoneId = ZoneId.systemDefault()): LocalDateTime? {
+    if (dateStr.isNullOrBlank()) return null
+    return try {
+        LocalDateTime.ofInstant(Instant.parse(dateStr), zoneId)
+    } catch (_: Exception) {
+        try { LocalDateTime.parse(dateStr.replace("Z", "")) } catch (_: Exception) { null }
     }
 }
 

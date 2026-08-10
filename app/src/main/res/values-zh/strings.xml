@@ -1433,4 +1433,36 @@
 
     <!-- Compact route-coverage affordance shown in Activity, near tag/route filtering. %1$d known, %2$d total -->
     <string name="activity_route_coverage">常用路线基于 %1$d / %2$d 次已知端点的行程</string>
+
+    <!-- ==================== Trip Map (Phase 8B) ==================== -->
+    <!-- Fallback title for the Trip Map screen before a date has loaded -->
+    <string name="trip_map_title">行程地图</string>
+    <!-- Icon button in Activity's date header that opens Trip Map for that day -->
+    <string name="trip_map_open">行程地图</string>
+    <!-- Content description for the previous-day navigation button -->
+    <string name="trip_map_previous_day">前一天</string>
+    <!-- Content description for the next-day navigation button -->
+    <string name="trip_map_next_day">后一天</string>
+    <!-- Shown when a selected day has no drives or charges -->
+    <string name="trip_map_no_activity">这一天没有行程或充电记录。</string>
+    <!-- Shown in the map area when no drive or charge location is known for the day -->
+    <string name="trip_map_no_locations">此日期暂无已知的地图位置。</string>
+    <!-- Header for the day's totals card -->
+    <string name="trip_map_totals_title">总计</string>
+    <!-- Label for total distance driven that day -->
+    <string name="trip_map_distance">距离</string>
+    <!-- Label for total time spent driving that day -->
+    <string name="trip_map_driving_time">驾驶时间</string>
+    <!-- Label for total time spent charging that day -->
+    <string name="trip_map_charging_time">充电时间</string>
+    <!-- Label for total measured/derived driving energy that day -->
+    <string name="trip_map_driving_energy">驾驶能耗</string>
+    <!-- Label for total energy added while charging that day -->
+    <string name="trip_map_charging_energy">充电能量</string>
+    <!-- Label for total charging cost that day -->
+    <string name="trip_map_charging_cost">充电费用</string>
+    <!-- Shown when a charge session's cost cannot be determined -->
+    <string name="trip_map_cost_unavailable">费用不可用</string>
+    <!-- Shown when the day's charge sessions used more than one currency, so no single total applies -->
+    <string name="trip_map_mixed_currency">货币不统一</string>
 </resources>

@@ -1,9 +1,6 @@
 package com.matedroid.ui.screens.drives
 
 import android.content.Intent
-import android.graphics.Paint
-import android.graphics.ColorMatrix
-import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -97,6 +94,10 @@ import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.components.FullscreenLineChart
 import com.matedroid.ui.components.MateDroidLoadingPlaceholder
 import com.matedroid.ui.components.createLabeledPinMarkerDrawable
+import com.matedroid.ui.components.RouteSegment
+import com.matedroid.ui.components.addRouteEndpointMarker
+import com.matedroid.ui.components.addRouteSegments
+import com.matedroid.ui.components.applyTesManoDarkMapTreatment
 import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
 import com.matedroid.ui.screens.trips.displayName
 import com.matedroid.ui.theme.CarColorPalette
@@ -106,8 +107,6 @@ import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
-import org.osmdroid.views.overlay.Polyline
-import org.osmdroid.views.overlay.Marker
 import com.matedroid.util.formatDurationCompact
 import com.matedroid.util.formatMedium
 import com.matedroid.util.formatTime
@@ -1030,71 +1029,6 @@ private fun DriveMapCard(positions: List<DrivePosition>, routeColor: Color) {
             }
         }
     }
-}
-
-/** A colored route segment deliberately keeps the renderer ready for future server-backed segments. */
-private data class RouteSegment(val points: List<GeoPoint>, val color: Int)
-
-/**
- * Darken/desaturate the existing OSM tiles instead of replacing the map provider. The red route
- * and endpoint pins stay unfiltered overlays, preserving a clear driving hierarchy in dark UI.
- */
-private fun MapView.applyTesManoDarkMapTreatment() {
-    setBackgroundColor(0xFF101112.toInt())
-    mapOverlay.setLoadingBackgroundColor(0xFF101112.toInt())
-    mapOverlay.setLoadingLineColor(0xFF30343A.toInt())
-    mapOverlay.setColorFilter(
-        ColorMatrixColorFilter(
-            ColorMatrix(
-                floatArrayOf(
-                    0.08f, 0.20f, 0.03f, 0f, 0f,
-                    0.08f, 0.20f, 0.03f, 0f, 0f,
-                    0.08f, 0.20f, 0.03f, 0f, 0f,
-                    0f, 0f, 0f, 1f, 0f
-                )
-            )
-        )
-    )
-}
-
-/** Two-layer segments make the route distinct from both dark tiles and dense street geometry. */
-private fun MapView.addRouteSegments(segments: List<RouteSegment>) {
-    segments.filter { it.points.size > 1 }.forEach { segment ->
-        overlays.add(
-            Polyline().apply {
-                setPoints(segment.points)
-                outlinePaint.color = 0xCC090A0B.toInt()
-                outlinePaint.strokeWidth = 16f
-                outlinePaint.strokeCap = Paint.Cap.ROUND
-                outlinePaint.strokeJoin = Paint.Join.ROUND
-            }
-        )
-        overlays.add(
-            Polyline().apply {
-                setPoints(segment.points)
-                outlinePaint.color = segment.color
-                outlinePaint.strokeWidth = 9f
-                outlinePaint.strokeCap = Paint.Cap.ROUND
-                outlinePaint.strokeJoin = Paint.Join.ROUND
-            }
-        )
-    }
-}
-
-private fun MapView.addRouteEndpointMarker(
-    point: GeoPoint,
-    label: String,
-    title: String,
-    color: Int
-) {
-    overlays.add(
-        Marker(this).apply {
-            position = point
-            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-            this.title = title
-            icon = createLabeledPinMarkerDrawable(resources, color, label)
-        }
-    )
 }
 
 data class StatItem(val label: String, val value: String)

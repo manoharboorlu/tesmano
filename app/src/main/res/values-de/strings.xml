@@ -1526,4 +1526,36 @@
 
     <!-- Compact route-coverage affordance shown in Activity, near tag/route filtering. %1$d known, %2$d total -->
     <string name="activity_route_coverage">Wiederkehrende Strecken basierend auf %1$d von %2$d Fahrten mit bekannten Punkten</string>
+
+    <!-- ==================== Trip Map (Phase 8B) ==================== -->
+    <!-- Fallback title for the Trip Map screen before a date has loaded -->
+    <string name="trip_map_title">Tageskarte</string>
+    <!-- Icon button in Activity's date header that opens Trip Map for that day -->
+    <string name="trip_map_open">Tageskarte</string>
+    <!-- Content description for the previous-day navigation button -->
+    <string name="trip_map_previous_day">Vorheriger Tag</string>
+    <!-- Content description for the next-day navigation button -->
+    <string name="trip_map_next_day">Nächster Tag</string>
+    <!-- Shown when a selected day has no drives or charges -->
+    <string name="trip_map_no_activity">Keine Fahrten oder Ladevorgänge an diesem Tag.</string>
+    <!-- Shown in the map area when no drive or charge location is known for the day -->
+    <string name="trip_map_no_locations">Für diesen Tag ist noch kein Kartenstandort bekannt.</string>
+    <!-- Header for the day's totals card -->
+    <string name="trip_map_totals_title">Gesamt</string>
+    <!-- Label for total distance driven that day -->
+    <string name="trip_map_distance">Strecke</string>
+    <!-- Label for total time spent driving that day -->
+    <string name="trip_map_driving_time">Fahrzeit</string>
+    <!-- Label for total time spent charging that day -->
+    <string name="trip_map_charging_time">Ladezeit</string>
+    <!-- Label for total measured/derived driving energy that day -->
+    <string name="trip_map_driving_energy">Fahrenergie</string>
+    <!-- Label for total energy added while charging that day -->
+    <string name="trip_map_charging_energy">Ladeenergie</string>
+    <!-- Label for total charging cost that day -->
+    <string name="trip_map_charging_cost">Ladekosten</string>
+    <!-- Shown when a charge session's cost cannot be determined -->
+    <string name="trip_map_cost_unavailable">Kosten nicht verfügbar</string>
+    <!-- Shown when the day's charge sessions used more than one currency, so no single total applies -->
+    <string name="trip_map_mixed_currency">Gemischte Währungen</string>
 </resources>

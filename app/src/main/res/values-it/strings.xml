@@ -1411,4 +1411,36 @@
 
     <!-- Compact route-coverage affordance shown in Activity, near tag/route filtering. %1$d known, %2$d total -->
     <string name="activity_route_coverage">Percorsi ricorrenti basati su %1$d di %2$d tragitti con punti noti</string>
+
+    <!-- ==================== Trip Map (Phase 8B) ==================== -->
+    <!-- Fallback title for the Trip Map screen before a date has loaded -->
+    <string name="trip_map_title">Mappa del giorno</string>
+    <!-- Icon button in Activity's date header that opens Trip Map for that day -->
+    <string name="trip_map_open">Mappa del giorno</string>
+    <!-- Content description for the previous-day navigation button -->
+    <string name="trip_map_previous_day">Giorno precedente</string>
+    <!-- Content description for the next-day navigation button -->
+    <string name="trip_map_next_day">Giorno successivo</string>
+    <!-- Shown when a selected day has no drives or charges -->
+    <string name="trip_map_no_activity">Nessun viaggio o ricarica in questo giorno.</string>
+    <!-- Shown in the map area when no drive or charge location is known for the day -->
+    <string name="trip_map_no_locations">Nessuna posizione nota per questo giorno.</string>
+    <!-- Header for the day's totals card -->
+    <string name="trip_map_totals_title">Totali</string>
+    <!-- Label for total distance driven that day -->
+    <string name="trip_map_distance">Distanza</string>
+    <!-- Label for total time spent driving that day -->
+    <string name="trip_map_driving_time">Guida</string>
+    <!-- Label for total time spent charging that day -->
+    <string name="trip_map_charging_time">Ricarica</string>
+    <!-- Label for total measured/derived driving energy that day -->
+    <string name="trip_map_driving_energy">Energia di guida</string>
+    <!-- Label for total energy added while charging that day -->
+    <string name="trip_map_charging_energy">Energia di ricarica</string>
+    <!-- Label for total charging cost that day -->
+    <string name="trip_map_charging_cost">Costo di ricarica</string>
+    <!-- Shown when a charge session's cost cannot be determined -->
+    <string name="trip_map_cost_unavailable">Costo non disponibile</string>
+    <!-- Shown when the day's charge sessions used more than one currency, so no single total applies -->
+    <string name="trip_map_mixed_currency">Valute miste</string>
 </resources>

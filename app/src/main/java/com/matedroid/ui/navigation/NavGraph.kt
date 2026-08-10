@@ -41,6 +41,7 @@ import com.matedroid.ui.screens.stats.CountriesVisitedScreen
 import com.matedroid.ui.screens.stats.RegionsVisitedScreen
 import com.matedroid.ui.screens.stats.StatsScreen
 import com.matedroid.ui.screens.sentry.SentryHistoryScreen
+import com.matedroid.ui.screens.tripmap.TripMapScreen
 import com.matedroid.ui.screens.trips.CreateTripScreen
 import com.matedroid.ui.screens.trips.TripDetailScreen
 import com.matedroid.ui.screens.trips.TripsScreen
@@ -142,6 +143,9 @@ sealed interface Screen {
 
     @Serializable
     data class SentryHistory(val carId: Int, val exteriorColor: String? = null) : Screen
+
+    @Serializable
+    data class TripMap(val carId: Int, val date: String, val exteriorColor: String? = null) : Screen
 }
 
 @Composable
@@ -299,6 +303,25 @@ fun NavGraph(
                 },
                 onNavigateToRecurringRoutes = {
                     navController.navigate(Screen.RecurringRoutes(route.carId, route.exteriorColor))
+                },
+                onNavigateToChargeDetail = { chargeId ->
+                    navController.navigate(Screen.ChargeDetail(route.carId, chargeId, route.exteriorColor))
+                },
+                onNavigateToTripMap = { date ->
+                    navController.navigate(Screen.TripMap(route.carId, date, route.exteriorColor))
+                }
+            )
+        }
+
+        composable<Screen.TripMap> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.TripMap>()
+            TripMapScreen(
+                carId = route.carId,
+                date = route.date,
+                exteriorColor = route.exteriorColor,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDriveDetail = { driveId ->
+                    navController.navigate(Screen.DriveDetail(route.carId, driveId, route.exteriorColor))
                 },
                 onNavigateToChargeDetail = { chargeId ->
                     navController.navigate(Screen.ChargeDetail(route.carId, chargeId, route.exteriorColor))

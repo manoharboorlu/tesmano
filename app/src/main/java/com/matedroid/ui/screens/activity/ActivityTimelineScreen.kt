@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -22,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.DirectionsCar
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -76,6 +78,7 @@ fun ActivityTimelineScreen(
     onNavigateToDriveDetail: (Int) -> Unit,
     onNavigateToChargeDetail: (Int) -> Unit,
     onNavigateToRecurringRoutes: () -> Unit,
+    onNavigateToTripMap: (String) -> Unit = {},
     viewModel: ActivityTimelineViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -156,7 +159,7 @@ fun ActivityTimelineScreen(
                         ) {
                             items(rows, key = { it.key }) { row ->
                                 when (row) {
-                                    is TimelineRow.DateHeader -> DateHeader(row.date)
+                                    is TimelineRow.DateHeader -> DateHeader(row.date, onOpenTripMap = onNavigateToTripMap)
                                     is TimelineRow.EntryRow -> ActivityRow(
                                         entry = row.entry,
                                         units = uiState.units,
@@ -280,14 +283,29 @@ private fun EmptyActivity(filter: ActivityFilter) {
 }
 
 @Composable
-private fun DateHeader(date: LocalDate?) {
-    Text(
-        text = date?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(Locale.getDefault()))
-            ?: stringResource(R.string.unknown),
-        modifier = Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp, bottom = 6.dp),
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary
-    )
+private fun DateHeader(date: LocalDate?, onOpenTripMap: (String) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 18.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = date?.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.FULL).withLocale(Locale.getDefault()))
+                ?: stringResource(R.string.unknown),
+            modifier = Modifier.weight(1f),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.primary
+        )
+        if (date != null) {
+            IconButton(onClick = { onOpenTripMap(date.toString()) }, modifier = Modifier.size(32.dp)) {
+                Icon(
+                    imageVector = Icons.Filled.Map,
+                    contentDescription = stringResource(R.string.trip_map_open),
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
 }
 
 @Composable
