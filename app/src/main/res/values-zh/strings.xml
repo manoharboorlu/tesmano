@@ -1465,4 +1465,37 @@
     <string name="trip_map_cost_unavailable">费用不可用</string>
     <!-- Shown when the day's charge sessions used more than one currency, so no single total applies -->
     <string name="trip_map_mixed_currency">货币不统一</string>
+
+    <!-- ==================== Driving Efficiency Lab (Phase 9A) ==================== -->
+    <string name="efficiency_lab_title">驾驶能效</string>
+    <string name="efficiency_lab_menu_item">驾驶能效</string>
+    <string name="efficiency_period_7d">7天</string>
+    <string name="efficiency_period_30d">30天</string>
+    <string name="efficiency_period_90d">90天</string>
+    <string name="efficiency_period_all">全部</string>
+    <string name="efficiency_distance_driven">行驶里程</string>
+    <string name="efficiency_energy_used">已用能量</string>
+    <string name="efficiency_drive_count_label">行程数</string>
+    <string name="efficiency_personal_baseline">个人基准</string>
+    <string name="efficiency_more_efficient">比基准高效 %1$s</string>
+    <string name="efficiency_less_efficient">比基准低效 %1$s</string>
+    <string name="efficiency_matches_baseline">与基准一致</string>
+    <string name="efficiency_quality_coverage">%2$d 次行程中有 %1$d 次能效数据有效</string>
+    <string name="efficiency_trend_title">能效趋势</string>
+    <string name="efficiency_speed_title">能效与平均速度的关联</string>
+    <string name="efficiency_trip_length_title">能效与行程距离的关联</string>
+    <string name="efficiency_temp_title">能效与室外温度的关联</string>
+    <string name="efficiency_temp_unavailable">此时段无室外温度数据。</string>
+    <string name="efficiency_association_disclaimer">仅供个人探索的简单关联，并非因果分析。</string>
+    <string name="efficiency_best_drives">最高效</string>
+    <string name="efficiency_worst_drives">最低效</string>
+    <string name="efficiency_min_distance_filter">行程 ≥ %1$s</string>
+    <string name="efficiency_rated_benchmark_note">在不假设电池容量或 EPA 数据的情况下，当前数据无法提供与 Tesla 额定能效的对比。未来可通过保留的 Fleet Telemetry 数据获得更可靠的对比。</string>
+    <string name="efficiency_no_data">此时段没有行程。</string>
+    <string name="efficiency_context_title">能效背景</string>
+    <string name="efficiency_context_this_drive">本次行程</string>
+    <string name="efficiency_context_30day_avg">30 天平均值</string>
+    <string name="efficiency_context_personal_avg">个人平均值</string>
+    <string name="efficiency_context_better">比近期平均值高效 %1$s</string>
+    <string name="efficiency_context_worse">比近期平均值低效 %1$s</string>
 </resources>

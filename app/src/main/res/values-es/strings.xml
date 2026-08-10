@@ -1443,4 +1443,37 @@
     <string name="trip_map_cost_unavailable">Coste no disponible</string>
     <!-- Shown when the day's charge sessions used more than one currency, so no single total applies -->
     <string name="trip_map_mixed_currency">Monedas mixtas</string>
+
+    <!-- ==================== Driving Efficiency Lab (Phase 9A) ==================== -->
+    <string name="efficiency_lab_title">Eficiencia de Conducción</string>
+    <string name="efficiency_lab_menu_item">Eficiencia de conducción</string>
+    <string name="efficiency_period_7d">7d</string>
+    <string name="efficiency_period_30d">30d</string>
+    <string name="efficiency_period_90d">90d</string>
+    <string name="efficiency_period_all">Todo</string>
+    <string name="efficiency_distance_driven">Distancia recorrida</string>
+    <string name="efficiency_energy_used">Energía utilizada</string>
+    <string name="efficiency_drive_count_label">Trayectos</string>
+    <string name="efficiency_personal_baseline">Referencia personal</string>
+    <string name="efficiency_more_efficient">%1$s más eficiente que tu referencia</string>
+    <string name="efficiency_less_efficient">%1$s menos eficiente que tu referencia</string>
+    <string name="efficiency_matches_baseline">Igual que tu referencia</string>
+    <string name="efficiency_quality_coverage">%1$d de %2$d trayectos con eficiencia válida</string>
+    <string name="efficiency_trend_title">Tendencia de eficiencia</string>
+    <string name="efficiency_speed_title">Eficiencia por velocidad media</string>
+    <string name="efficiency_trip_length_title">Eficiencia por longitud del trayecto</string>
+    <string name="efficiency_temp_title">Eficiencia por temperatura exterior</string>
+    <string name="efficiency_temp_unavailable">No hay datos de temperatura exterior para este período.</string>
+    <string name="efficiency_association_disclaimer">Asociaciones simples para tu propia exploración, no un análisis causal.</string>
+    <string name="efficiency_best_drives">Más eficientes</string>
+    <string name="efficiency_worst_drives">Menos eficientes</string>
+    <string name="efficiency_min_distance_filter">Trayectos ≥ %1$s</string>
+    <string name="efficiency_rated_benchmark_note">No hay una comparación con la eficiencia nominal de Tesla disponible a partir de los datos actuales sin suponer la capacidad de la batería o cifras de la EPA. Una comparación más sólida podrá obtenerse más adelante con Fleet Telemetry.</string>
+    <string name="efficiency_no_data">No hay trayectos en este período.</string>
+    <string name="efficiency_context_title">Contexto de eficiencia</string>
+    <string name="efficiency_context_this_drive">Este trayecto</string>
+    <string name="efficiency_context_30day_avg">Promedio de 30 días</string>
+    <string name="efficiency_context_personal_avg">Promedio personal</string>
+    <string name="efficiency_context_better">%1$s mejor que el promedio reciente</string>
+    <string name="efficiency_context_worse">%1$s peor que el promedio reciente</string>
 </resources>

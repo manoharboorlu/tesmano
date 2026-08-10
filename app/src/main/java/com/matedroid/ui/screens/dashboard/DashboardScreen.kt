@@ -55,6 +55,7 @@ import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Insights
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.TireRepair
 import androidx.compose.material.icons.filled.BatteryFull
@@ -192,6 +193,7 @@ fun DashboardScreen(
     onNavigateToUpdates: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
     onNavigateToStats: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
     onNavigateToChargingAnalytics: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
+    onNavigateToEfficiencyLab: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
     onNavigateToCurrentCharge: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
     onNavigateToWhereWasI: (carId: Int, timestamp: String, exteriorColor: String?) -> Unit = { _, _, _ -> },
     onNavigateToSentryHistory: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
@@ -357,6 +359,11 @@ fun DashboardScreen(
                         onNavigateToChargingAnalytics(carId, uiState.selectedCarExterior?.exteriorColor)
                     }
                 },
+                onNavigateToEfficiencyLab = {
+                    uiState.selectedCarId?.let { carId ->
+                        onNavigateToEfficiencyLab(carId, uiState.selectedCarExterior?.exteriorColor)
+                    }
+                },
                 onNavigateToBattery = {
                     uiState.selectedCarId?.let { carId ->
                         onNavigateToBattery(carId, uiState.selectedCarEfficiency, uiState.selectedCarExterior?.exteriorColor)
@@ -395,6 +402,7 @@ private fun DashboardOverflowMenu(
     carSelected: Boolean,
     onNavigateToStats: () -> Unit,
     onNavigateToChargingAnalytics: () -> Unit,
+    onNavigateToEfficiencyLab: () -> Unit,
     onNavigateToBattery: () -> Unit,
     onNavigateToWhereWasI: () -> Unit,
     onNavigateToSentryHistory: () -> Unit,
@@ -420,6 +428,13 @@ private fun DashboardOverflowMenu(
                 contentPadding = menuItemPadding,
                 enabled = carSelected,
                 onClick = { onExpandedChange(false); onNavigateToChargingAnalytics() }
+            )
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.efficiency_lab_menu_item)) },
+                leadingIcon = { Icon(Icons.Filled.Speed, contentDescription = null) },
+                contentPadding = menuItemPadding,
+                enabled = carSelected,
+                onClick = { onExpandedChange(false); onNavigateToEfficiencyLab() }
             )
             DropdownMenuItem(
                 text = { Text(stringResource(R.string.battery_health_title)) },

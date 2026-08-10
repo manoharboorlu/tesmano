@@ -174,6 +174,7 @@ fun DriveDetailScreen(
                     isLoadingWeather = uiState.isLoadingWeather,
                     containingTrip = uiState.containingTrip,
                     comparison = uiState.comparison,
+                    efficiencyContext = uiState.efficiencyContext,
                     placeContext = uiState.placeContext,
                     onCompareClick = { onNavigateToCompare(driveId) },
                     onNavigateToTripDetail = onNavigateToTripDetail,
@@ -204,6 +205,7 @@ private fun DriveDetailContent(
     isLoadingWeather: Boolean,
     containingTrip: Pair<Long, com.matedroid.domain.model.Trip>?,
     comparison: DriveComparison?,
+    efficiencyContext: EfficiencyContext?,
     placeContext: DrivePlaceContext?,
     onCompareClick: () -> Unit,
     onNavigateToTripDetail: (String) -> Unit,
@@ -277,6 +279,7 @@ private fun DriveDetailContent(
                     palette = palette,
                     is24Hour = is24Hour,
                     comparison = comparison,
+                    efficiencyContext = efficiencyContext,
                     onCompareClick = onCompareClick,
                     modifier = Modifier.weight(1f)
                 )
@@ -300,6 +303,7 @@ private fun DriveDetailContent(
                 palette = palette,
                 is24Hour = is24Hour,
                 comparison = comparison,
+                efficiencyContext = efficiencyContext,
                 onCompareClick = onCompareClick
             )
             DriveVisualColumn(
@@ -461,6 +465,7 @@ private fun DriveSummaryColumn(
     palette: CarColorPalette,
     is24Hour: Boolean,
     comparison: DriveComparison?,
+    efficiencyContext: EfficiencyContext?,
     onCompareClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -487,7 +492,49 @@ private fun DriveSummaryColumn(
             }
         }
         stats?.let { DriveStatTiles(stats = it, units = units, palette = palette) }
+        efficiencyContext?.let { EfficiencyContextCard(it, units) }
         comparison?.let { DriveCompareCard(comparison = it, palette = palette, onClick = onCompareClick) }
+    }
+}
+
+@Composable
+private fun EfficiencyContextCard(context: EfficiencyContext, units: Units?) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(20.dp)) {
+        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text(
+                stringResource(R.string.efficiency_context_title).uppercase(),
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Bold,
+                color = PerformanceRed
+            )
+            Spacer(Modifier.height(4.dp))
+            EfficiencyContextRow(stringResource(R.string.efficiency_context_this_drive), UnitFormatter.formatEfficiency(context.thisDriveWhPerUnit, units, 0))
+            context.last30DayWhPerUnit?.let {
+                EfficiencyContextRow(stringResource(R.string.efficiency_context_30day_avg), UnitFormatter.formatEfficiency(it, units, 0))
+            }
+            context.personalWhPerUnit?.let {
+                EfficiencyContextRow(stringResource(R.string.efficiency_context_personal_avg), UnitFormatter.formatEfficiency(it, units, 0))
+            }
+            val reference = context.last30DayWhPerUnit ?: context.personalWhPerUnit
+            if (reference != null) {
+                val delta = reference - context.thisDriveWhPerUnit
+                val deltaText = UnitFormatter.formatEfficiency(kotlin.math.abs(delta), units, 0)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    stringResource(if (delta >= 0) R.string.efficiency_context_better else R.string.efficiency_context_worse, deltaText),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (delta >= 0) com.matedroid.ui.theme.StatusSuccess else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EfficiencyContextRow(label: String, value: String) {
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
     }
 }
 

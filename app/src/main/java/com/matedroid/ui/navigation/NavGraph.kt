@@ -41,6 +41,7 @@ import com.matedroid.ui.screens.stats.CountriesVisitedScreen
 import com.matedroid.ui.screens.stats.RegionsVisitedScreen
 import com.matedroid.ui.screens.stats.StatsScreen
 import com.matedroid.ui.screens.sentry.SentryHistoryScreen
+import com.matedroid.ui.screens.efficiency.EfficiencyLabScreen
 import com.matedroid.ui.screens.tripmap.TripMapScreen
 import com.matedroid.ui.screens.trips.CreateTripScreen
 import com.matedroid.ui.screens.trips.TripDetailScreen
@@ -146,6 +147,9 @@ sealed interface Screen {
 
     @Serializable
     data class TripMap(val carId: Int, val date: String, val exteriorColor: String? = null) : Screen
+
+    @Serializable
+    data class EfficiencyLab(val carId: Int, val exteriorColor: String? = null) : Screen
 }
 
 @Composable
@@ -278,6 +282,9 @@ fun NavGraph(
                 onNavigateToChargingAnalytics = { carId, exteriorColor ->
                     navController.navigate(Screen.ChargingAnalytics(carId, exteriorColor))
                 },
+                onNavigateToEfficiencyLab = { carId, exteriorColor ->
+                    navController.navigate(Screen.EfficiencyLab(carId, exteriorColor))
+                },
                 onNavigateToCurrentCharge = { carId, exteriorColor ->
                     navController.navigate(Screen.CurrentCharge(carId, exteriorColor))
                 },
@@ -325,6 +332,18 @@ fun NavGraph(
                 },
                 onNavigateToChargeDetail = { chargeId ->
                     navController.navigate(Screen.ChargeDetail(route.carId, chargeId, route.exteriorColor))
+                }
+            )
+        }
+
+        composable<Screen.EfficiencyLab> { backStackEntry ->
+            val route = backStackEntry.toRoute<Screen.EfficiencyLab>()
+            EfficiencyLabScreen(
+                carId = route.carId,
+                exteriorColor = route.exteriorColor,
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToDriveDetail = { driveId ->
+                    navController.navigate(Screen.DriveDetail(route.carId, driveId, route.exteriorColor))
                 }
             )
         }

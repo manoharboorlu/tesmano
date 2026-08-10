@@ -5,12 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.matedroid.data.api.models.DriveDetail
 import com.matedroid.data.api.models.Units
 import com.matedroid.data.repository.ApiResult
+import com.matedroid.data.local.dao.DriveSummaryDao
 import com.matedroid.data.local.entity.SavedTripLeg
 import com.matedroid.data.repository.TeslamateRepository
 import com.matedroid.data.repository.WeatherPoint
 import com.matedroid.data.repository.WeatherRepository
 import com.matedroid.domain.DriveComparison
 import com.matedroid.domain.DriveComparisonRepository
+import com.matedroid.domain.EfficiencyPeriod
 import com.matedroid.domain.LegRef
 import com.matedroid.domain.TripRepository
 import com.matedroid.domain.DrivePlaceContext
@@ -20,8 +22,11 @@ import com.matedroid.domain.GeoPoint
 import com.matedroid.domain.DriveTagSet
 import com.matedroid.domain.RouteTagsRepository
 import com.matedroid.data.local.entity.UserDriveTag
+import com.matedroid.domain.computeEfficiencySummary
+import com.matedroid.domain.filterByPeriod
 import com.matedroid.domain.model.Trip
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,7 +46,15 @@ data class DriveDetailUiState(
     val comparison: DriveComparison? = null,
     val placeContext: DrivePlaceContext? = null,
     val tags: DriveTagSet = DriveTagSet(false, emptyList()),
-    val availableTags: List<UserDriveTag> = emptyList()
+    val availableTags: List<UserDriveTag> = emptyList(),
+    val efficiencyContext: EfficiencyContext? = null
+)
+
+/** Compact Efficiency Lab context for the currently-viewed drive — see [DriveDetailViewModel.loadEfficiencyContext]. */
+data class EfficiencyContext(
+    val thisDriveWhPerUnit: Double,
+    val last30DayWhPerUnit: Double?,
+    val personalWhPerUnit: Double?
 )
 
 data class DriveDetailStats(
@@ -74,7 +87,8 @@ class DriveDetailViewModel @Inject constructor(
     private val tripRepository: TripRepository,
     private val driveComparisonRepository: DriveComparisonRepository,
     private val smartPlacesRepository: SmartPlacesRepository,
-    private val routeTagsRepository: RouteTagsRepository
+    private val routeTagsRepository: RouteTagsRepository,
+    private val driveSummaryDao: DriveSummaryDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DriveDetailUiState())
@@ -131,6 +145,8 @@ class DriveDetailViewModel @Inject constructor(
 
                     // Fetch weather data in the background
                     loadWeatherData(detail)
+
+                    loadEfficiencyContext(carId, stats.efficiency)
                 }
                 is ApiResult.Error -> {
                     _uiState.update {
@@ -141,6 +157,24 @@ class DriveDetailViewModel @Inject constructor(
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Cheap, summary-only Efficiency Lab context for this drive — reuses cached
+     * [com.matedroid.data.local.entity.DriveSummary] rows already loaded elsewhere in the app;
+     * never triggers additional Drive Detail fetches.
+     */
+    private fun loadEfficiencyContext(carId: Int, thisDriveEfficiency: Double) {
+        viewModelScope.launch {
+            val allDrives = driveSummaryDao.getAllChronological(carId)
+            val last30 = filterByPeriod(allDrives, EfficiencyPeriod.Last30Days, LocalDate.now())
+            val context = EfficiencyContext(
+                thisDriveWhPerUnit = thisDriveEfficiency,
+                last30DayWhPerUnit = computeEfficiencySummary(last30).weightedEfficiency,
+                personalWhPerUnit = computeEfficiencySummary(allDrives).weightedEfficiency
+            )
+            _uiState.update { it.copy(efficiencyContext = context) }
         }
     }
 
