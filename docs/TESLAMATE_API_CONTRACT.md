@@ -126,3 +126,11 @@ TesMano derives charging-cost analytics solely from cached charge summaries, loc
 Effective $/kWh is weighted: summed eligible session cost divided by the same sessions' cost-basis energy. This may combine coherent grid-reported energy with battery-added fallback and is therefore labelled **Cost-basis energy**, never grid energy. Free sessions with known energy contribute zero cost and their energy; manual total-cost entries without usable energy contribute to spend but not that denominator.
 
 Charging spend/mile is total applicable charging spend divided by cached drive distance in the same period. It is intentionally not presented as exact energy cost per driven mile. Currencies are aggregated only when all priced sessions share one currency; TesMano never performs implicit FX conversion.
+
+## Local battery analytics
+
+Battery Lab labels source provenance: **Measured** is TeslaMate-recorded telemetry, **Derived** is a transparent calculation from it, and **Estimated** is a robust inference. Estimated usable capacity uses battery energy added divided by SOC increase for sessions with at least a meaningful SOC span; grid/wall energy is excluded because charging losses would inflate capacity. Missing telemetry, small spans, implausible implied values, and robust-MAD outliers are excluded. The estimate is a median, with confidence informed by sample count, dispersion, and date coverage.
+
+Capacity change is relative only to an observed early-sample baseline when at least three accepted samples exist; it is not an OEM/factory capacity or Tesla's official battery-health diagnostic. Rated-range normalization requires retained rated-range samples; current summaries do not retain them. Charging efficiency is weighted battery-added divided by coherent grid-reported energy, split by cached AC/DC aggregate classification. Battery temperature and raw power-by-SOC curves are unavailable in the current local contract and are deliberately deferred.
+
+Current summary SOC is whole-percent telemetry. The minimum 12-point SOC window reduces, but does not eliminate, quantization uncertainty; Battery Lab does not invent a correction factor and displays capacity rounded to 0.1 kWh.
