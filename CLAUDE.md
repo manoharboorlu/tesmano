@@ -13,7 +13,7 @@ TesMano is a personal, dark-only Tesla analytics Android app derived from MateDr
 
 ## Mandatory boundaries
 
-- Do not modify TeslaMate, TeslaMateApi, PostgreSQL, Oracle infrastructure, backend auth/security, or use Tesla Fleet API unless a future prompt explicitly authorizes it.
+- Do not modify TeslaMate, TeslaMateApi, PostgreSQL, Oracle infrastructure, backend auth/security, or use Tesla Fleet API unless a future prompt explicitly authorizes it. See `docs/TESMANO_FLEET_TELEMETRY_ARCHITECTURE.md` for the Fleet Telemetry sidecar architecture spike (design only; not authorized for implementation).
 - Do not add vehicle controls, wake, lock, climate, or other commands.
 - Never expose, log, commit, or copy credentials, tokens, signing material, or private keys.
 - During physical testing, never uninstall TesMano, run `pm clear`, or clear app data. Use `./gradlew installDebug` for in-place upgrades.
