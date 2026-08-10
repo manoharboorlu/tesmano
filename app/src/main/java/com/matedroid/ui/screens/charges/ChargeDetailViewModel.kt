@@ -30,7 +30,8 @@ data class ChargeDetailUiState(
     val units: Units? = null,
     val stats: ChargeDetailStats? = null,
     val currencySymbol: String = "€",
-    val isDcCharge: Boolean = false,
+    /** Null means the captured session does not report a trustworthy charger classification. */
+    val isDcCharge: Boolean? = null,
     val containingTrip: Pair<Long, Trip>? = null,
     val teslamateBaseUrl: String = "",
     val comparison: ChargeComparison? = null
@@ -53,8 +54,10 @@ data class ChargeDetailStats(
     val batteryEnd: Int,
     val batteryAdded: Int,
     val energyAdded: Double,
-    val energyUsed: Double,
-    val efficiency: Double,
+    /** TeslaMate's reported wall energy. It is intentionally nullable: do not invent a value. */
+    val energyUsed: Double?,
+    /** Only available when both reported energy figures make physical sense. */
+    val efficiency: Double?,
     val durationMin: Int,
     val cost: Double?
 )

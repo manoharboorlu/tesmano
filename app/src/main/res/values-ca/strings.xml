@@ -1298,4 +1298,10 @@
     <string name="activity_unknown_location">Ubicació desconeguda</string>
     <string name="activity_energy_added">S\'han afegit %1$s</string>
     <string name="activity_soc_range">%1$d%% → %2$d%%</string>
+    <string name="drive_detail_label">CONDUCCIÓ</string>
+    <string name="charge_detail_label">SESSIÓ DE CÀRREGA</string>
+    <string name="average_speed">Velocitat mitjana</string>
+    <string name="sampled_average">Mitjana mostrejada</string>
+    <string name="reported">Informat</string>
+    <string name="charger_type_unavailable">TIPUS DE CARREGADOR NO DISPONIBLE</string>
 </resources>

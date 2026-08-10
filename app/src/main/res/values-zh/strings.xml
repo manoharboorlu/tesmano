@@ -1320,4 +1320,10 @@
     <string name="activity_unknown_location">未知位置</string>
     <string name="activity_energy_added">已增加 %1$s</string>
     <string name="activity_soc_range">%1$d%% → %2$d%%</string>
+    <string name="drive_detail_label">行驶</string>
+    <string name="charge_detail_label">充电会话</string>
+    <string name="average_speed">平均速度</string>
+    <string name="sampled_average">采样平均值</string>
+    <string name="reported">已报告</string>
+    <string name="charger_type_unavailable">充电器类型不可用</string>
 </resources>

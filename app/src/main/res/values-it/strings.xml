@@ -1298,4 +1298,10 @@
     <string name="activity_unknown_location">Posizione sconosciuta</string>
     <string name="activity_energy_added">%1$s aggiunti</string>
     <string name="activity_soc_range">%1$d%% → %2$d%%</string>
+    <string name="drive_detail_label">GUIDA</string>
+    <string name="charge_detail_label">SESSIONE DI RICARICA</string>
+    <string name="average_speed">Velocità media</string>
+    <string name="sampled_average">Media campionata</string>
+    <string name="reported">Segnalato</string>
+    <string name="charger_type_unavailable">TIPO DI CARICATORE NON DISPONIBILE</string>
 </resources>

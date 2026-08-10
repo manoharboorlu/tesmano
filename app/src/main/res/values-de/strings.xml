@@ -1413,4 +1413,10 @@
     <string name="activity_unknown_location">Unbekannter Ort</string>
     <string name="activity_energy_added">%1$s hinzugefügt</string>
     <string name="activity_soc_range">%1$d%% → %2$d%%</string>
+    <string name="drive_detail_label">FAHRT</string>
+    <string name="charge_detail_label">LADESITZUNG</string>
+    <string name="average_speed">Durchschnittsgeschwindigkeit</string>
+    <string name="sampled_average">Stichprobenmittelwert</string>
+    <string name="reported">Gemeldet</string>
+    <string name="charger_type_unavailable">LADETYP NICHT VERFÜGBAR</string>
 </resources>

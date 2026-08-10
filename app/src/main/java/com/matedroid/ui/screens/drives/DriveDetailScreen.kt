@@ -2,6 +2,8 @@ package com.matedroid.ui.screens.drives
 
 import android.content.Intent
 import android.graphics.Paint
+import android.graphics.ColorMatrix
+import android.graphics.ColorMatrixColorFilter
 import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -46,6 +48,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -85,14 +88,18 @@ import com.matedroid.domain.DriveComparison
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.components.FullscreenLineChart
 import com.matedroid.ui.components.MateDroidLoadingPlaceholder
+import com.matedroid.ui.components.createLabeledPinMarkerDrawable
+import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
 import com.matedroid.ui.screens.trips.displayName
 import com.matedroid.ui.theme.CarColorPalette
 import com.matedroid.ui.theme.CarColorPalettes
+import com.matedroid.ui.theme.PerformanceRed
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.BoundingBox
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Polyline
+import org.osmdroid.views.overlay.Marker
 import com.matedroid.util.formatDurationCompact
 import com.matedroid.util.formatMedium
 import com.matedroid.util.formatTime
@@ -138,7 +145,7 @@ fun DriveDetailScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = Color.Transparent
                 )
             )
         },
@@ -186,6 +193,7 @@ private fun DriveDetailContent(
     modifier: Modifier = Modifier
 ) {
     val is24Hour = android.text.format.DateFormat.is24HourFormat(LocalContext.current)
+    val adaptive = LocalAdaptiveLayoutInfo.current
     val scrollState = rememberScrollState()
     var sharedXFraction by remember { mutableStateOf<Float?>(null) }
 
@@ -218,33 +226,54 @@ private fun DriveDetailContent(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Hero: route, dominant distance, key figures, footer
-        DriveHeroSection(detail = detail, stats = stats, units = units, palette = palette, is24Hour = is24Hour)
-
-        // Accent stat tiles — efficiency and its main confounders
-        stats?.let { s -> DriveStatTiles(stats = s, units = units, palette = palette) }
-
-        // Compare entry — appears for drives with comparable sessions on the same route
-        comparison?.let { cmp ->
-            DriveCompareCard(comparison = cmp, palette = palette, onClick = onCompareClick)
-        }
-
-        // Primary chart: speed profile, accent-tinted
-        if (hasCharts && positions!!.any { it.speed != null }) {
-            SpeedChartCard(
-                positions = positions,
+        if (adaptive.supportsTwoPane) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.Top
+            ) {
+                DriveSummaryColumn(
+                    detail = detail,
+                    stats = stats,
+                    units = units,
+                    palette = palette,
+                    is24Hour = is24Hour,
+                    comparison = comparison,
+                    onCompareClick = onCompareClick,
+                    modifier = Modifier.weight(1f)
+                )
+                DriveVisualColumn(
+                    positions = positions,
+                    hasCharts = hasCharts,
+                    units = units,
+                    palette = palette,
+                    timeLabels = timeLabels,
+                    sharedXFraction = sharedXFraction,
+                    onXSelected = { sharedXFraction = it },
+                    fractionToTimeLabel = fractionToTimeLabel,
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        } else {
+            DriveSummaryColumn(
+                detail = detail,
+                stats = stats,
                 units = units,
-                color = palette.accent,
+                palette = palette,
+                is24Hour = is24Hour,
+                comparison = comparison,
+                onCompareClick = onCompareClick
+            )
+            DriveVisualColumn(
+                positions = positions,
+                hasCharts = hasCharts,
+                units = units,
+                palette = palette,
                 timeLabels = timeLabels,
-                externalSelectedFraction = sharedXFraction,
+                sharedXFraction = sharedXFraction,
                 onXSelected = { sharedXFraction = it },
                 fractionToTimeLabel = fractionToTimeLabel
             )
-        }
-
-        // Route map
-        if (!detail.positions.isNullOrEmpty()) {
-            DriveMapCard(positions = detail.positions, routeColor = palette.accent)
         }
 
         // Weather along the way
@@ -285,6 +314,74 @@ private fun DriveDetailContent(
     }
 }
 
+@Composable
+private fun DriveSummaryColumn(
+    detail: DriveDetail,
+    stats: DriveDetailStats?,
+    units: Units?,
+    palette: CarColorPalette,
+    is24Hour: Boolean,
+    comparison: DriveComparison?,
+    onCompareClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceContainer,
+            shape = RoundedCornerShape(20.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = stringResource(R.string.drive_detail_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = PerformanceRed
+                )
+                Spacer(Modifier.height(8.dp))
+                DriveHeroSection(
+                    detail = detail,
+                    stats = stats,
+                    units = units,
+                    palette = palette,
+                    is24Hour = is24Hour
+                )
+            }
+        }
+        stats?.let { DriveStatTiles(stats = it, units = units, palette = palette) }
+        comparison?.let { DriveCompareCard(comparison = it, palette = palette, onClick = onCompareClick) }
+    }
+}
+
+@Composable
+private fun DriveVisualColumn(
+    positions: List<DrivePosition>?,
+    hasCharts: Boolean,
+    units: Units?,
+    palette: CarColorPalette,
+    timeLabels: List<String>,
+    sharedXFraction: Float?,
+    onXSelected: (Float?) -> Unit,
+    fractionToTimeLabel: (Float) -> String,
+    modifier: Modifier = Modifier
+) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        positions?.takeIf { it.isNotEmpty() }?.let {
+            DriveMapCard(positions = it, routeColor = PerformanceRed)
+        }
+        if (hasCharts && positions?.any { it.speed != null } == true) {
+            SpeedChartCard(
+                positions = positions,
+                units = units,
+                color = palette.accent,
+                timeLabels = timeLabels,
+                externalSelectedFraction = sharedXFraction,
+                onXSelected = onXSelected,
+                fractionToTimeLabel = fractionToTimeLabel
+            )
+        }
+    }
+}
+
 /**
  * Compact hero: route (from → to), the dominant figure (distance) in the car's accent colour, a
  * balanced row of labelled key figures (avg speed, battery swing, duration), and a footer with the
@@ -299,7 +396,7 @@ private fun DriveHeroSection(
     is24Hour: Boolean
 ) {
     val unknownLocation = stringResource(R.string.unknown_location)
-    val avgLabel = stringResource(R.string.average)
+    val avgLabel = stringResource(R.string.average_speed)
     val batteryLabel = stringResource(R.string.battery)
     val durationLabel = stringResource(R.string.duration)
     val energyLabel = stringResource(R.string.energy)
@@ -335,7 +432,7 @@ private fun DriveHeroSection(
             ) {
                 HeroStat(
                     label = avgLabel,
-                    value = UnitFormatter.formatSpeed(s.speedAvg, units),
+                    value = UnitFormatter.formatSpeed(s.avgSpeedFromDistance, units),
                     modifier = Modifier.weight(1f)
                 )
                 HeroStat(
@@ -597,7 +694,8 @@ private fun DriveMoreDetails(
                     icon = Icons.Default.Speed,
                     stats = listOf(
                         StatItem(stringResource(R.string.maximum), UnitFormatter.formatSpeed(stats.speedMax.toDouble(), units)),
-                        StatItem(stringResource(R.string.average), UnitFormatter.formatSpeed(stats.speedAvg, units)),
+                        // Point samples are irregular; keep their simple mean clearly labelled.
+                        StatItem(stringResource(R.string.sampled_average), UnitFormatter.formatSpeed(stats.speedAvg, units)),
                         StatItem(stringResource(R.string.avg_distance), UnitFormatter.formatSpeed(stats.avgSpeedFromDistance, units))
                     )
                 )
@@ -747,14 +845,22 @@ private fun DriveMapCard(positions: List<DrivePosition>, routeColor: Color) {
                                 GeoPoint(pos.latitude!!, pos.longitude!!)
                             }
 
-                            val polyline = Polyline().apply {
-                                setPoints(geoPoints)
-                                outlinePaint.color = routeColorArgb
-                                outlinePaint.strokeWidth = 8f
-                                outlinePaint.strokeCap = Paint.Cap.ROUND
-                                outlinePaint.strokeJoin = Paint.Join.ROUND
-                            }
-                            overlays.add(polyline)
+                            applyTesManoDarkMapTreatment()
+                            addRouteSegments(
+                                listOf(RouteSegment(geoPoints, routeColorArgb))
+                            )
+                            addRouteEndpointMarker(
+                                point = geoPoints.first(),
+                                label = "S",
+                                title = ctx.getString(R.string.start),
+                                color = routeColorArgb
+                            )
+                            addRouteEndpointMarker(
+                                point = geoPoints.last(),
+                                label = "E",
+                                title = ctx.getString(R.string.end),
+                                color = 0xFFE6E9ED.toInt()
+                            )
 
                             if (geoPoints.isNotEmpty()) {
                                 val north = geoPoints.maxOf { it.latitude }
@@ -784,6 +890,71 @@ private fun DriveMapCard(positions: List<DrivePosition>, routeColor: Color) {
             }
         }
     }
+}
+
+/** A colored route segment deliberately keeps the renderer ready for future server-backed segments. */
+private data class RouteSegment(val points: List<GeoPoint>, val color: Int)
+
+/**
+ * Darken/desaturate the existing OSM tiles instead of replacing the map provider. The red route
+ * and endpoint pins stay unfiltered overlays, preserving a clear driving hierarchy in dark UI.
+ */
+private fun MapView.applyTesManoDarkMapTreatment() {
+    setBackgroundColor(0xFF101112.toInt())
+    mapOverlay.setLoadingBackgroundColor(0xFF101112.toInt())
+    mapOverlay.setLoadingLineColor(0xFF30343A.toInt())
+    mapOverlay.setColorFilter(
+        ColorMatrixColorFilter(
+            ColorMatrix(
+                floatArrayOf(
+                    0.08f, 0.20f, 0.03f, 0f, 0f,
+                    0.08f, 0.20f, 0.03f, 0f, 0f,
+                    0.08f, 0.20f, 0.03f, 0f, 0f,
+                    0f, 0f, 0f, 1f, 0f
+                )
+            )
+        )
+    )
+}
+
+/** Two-layer segments make the route distinct from both dark tiles and dense street geometry. */
+private fun MapView.addRouteSegments(segments: List<RouteSegment>) {
+    segments.filter { it.points.size > 1 }.forEach { segment ->
+        overlays.add(
+            Polyline().apply {
+                setPoints(segment.points)
+                outlinePaint.color = 0xCC090A0B.toInt()
+                outlinePaint.strokeWidth = 16f
+                outlinePaint.strokeCap = Paint.Cap.ROUND
+                outlinePaint.strokeJoin = Paint.Join.ROUND
+            }
+        )
+        overlays.add(
+            Polyline().apply {
+                setPoints(segment.points)
+                outlinePaint.color = segment.color
+                outlinePaint.strokeWidth = 9f
+                outlinePaint.strokeCap = Paint.Cap.ROUND
+                outlinePaint.strokeJoin = Paint.Join.ROUND
+            }
+        )
+    }
+}
+
+private fun MapView.addRouteEndpointMarker(
+    point: GeoPoint,
+    label: String,
+    title: String,
+    color: Int
+) {
+    overlays.add(
+        Marker(this).apply {
+            position = point
+            setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+            this.title = title
+            icon = createLabeledPinMarkerDrawable(resources, color, label)
+        }
+    )
 }
 
 data class StatItem(val label: String, val value: String)

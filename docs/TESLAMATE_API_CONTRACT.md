@@ -86,6 +86,10 @@ Cars/configuration reported by TeslaMate, current status, completed drives, comp
 
 TeslaMateApi does not provide a trip resource. It also has no standalone location-history endpoint used by the app; locations arrive inside status, charge summaries, and drive detail samples.
 
+### Autopilot / FSD route attribution
+
+The consumed contract exposes no `SelfDrivingMilesSinceReset`, Autopilot engagement state, FSD state, or equivalent per-sample usage field. Drive detail samples have timestamped position/telemetry, but no automation flag; the app stores only derived drive aggregates historically. Accurate FSD route highlighting is therefore not possible from the current backend. A future backend capability would need a timestamped, historically retained Autopilot/FSD engagement signal at or finer than the drive-position sampling cadence, with the same UTC/offset-preserving timestamps as the position samples. TesMano must not infer usage from speed, steering, or other telemetry.
+
 ### Created locally by MateDroid
 
 Stats summary tables, detail aggregates, reverse-geocode metadata, route/country caches, sentry alert history, auto-detected/saved/manual/edited/merged trips, trip names and membership, image overrides, notification state, selected car, credentials, and sync progress are local. Weather comes from Open-Meteo; reverse geocoding comes from Nominatim; neither is TeslaMateApi data.

@@ -54,6 +54,59 @@ fun createPinMarkerDrawable(resources: Resources, headColorArgb: Int): Drawable 
 }
 
 /**
+ * Route endpoint pin with a one-letter label. Kept generic so route renderers can use a distinct
+ * start/end treatment without coupling marker artwork to a particular screen.
+ */
+fun createLabeledPinMarkerDrawable(
+    resources: Resources,
+    headColorArgb: Int,
+    label: String
+): Drawable {
+    val density = resources.displayMetrics.density
+    val width = (28 * density).toInt()
+    val height = (40 * density).toInt()
+    val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bitmap)
+    val cx = width / 2f
+    val radius = 9 * density
+    val headCy = radius + 1 * density
+
+    val needlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFF090A0B.toInt()
+        style = Paint.Style.FILL
+    }
+    val needlePath = Path().apply {
+        moveTo(cx - 3 * density, headCy + radius * 0.45f)
+        lineTo(cx, height.toFloat() - density)
+        lineTo(cx + 3 * density, headCy + radius * 0.45f)
+        close()
+    }
+    canvas.drawPath(needlePath, needlePaint)
+
+    val headPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { color = headColorArgb }
+    canvas.drawCircle(cx, headCy, radius, headPaint)
+    canvas.drawCircle(
+        cx,
+        headCy,
+        radius,
+        Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = 0x99090A0B.toInt()
+            style = Paint.Style.STROKE
+            strokeWidth = density
+        }
+    )
+    val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = 0xFFFFFFFF.toInt()
+        textAlign = Paint.Align.CENTER
+        textSize = 10 * density
+        typeface = android.graphics.Typeface.DEFAULT_BOLD
+    }
+    val baseline = headCy - (labelPaint.fontMetrics.ascent + labelPaint.fontMetrics.descent) / 2f
+    canvas.drawText(label.take(1).uppercase(), cx, baseline, labelPaint)
+    return BitmapDrawable(resources, bitmap)
+}
+
+/**
  * Creates a map marker with a bolt/zap icon inside the circle head,
  * for charge stop locations. The bolt is drawn in white on the colored head.
  */

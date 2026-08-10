@@ -39,8 +39,13 @@ object ChargeStatsCalculator {
 
         // Energy stats
         val energyAdded = detail.chargeEnergyAdded ?: 0.0
-        val energyUsed = detail.chargeEnergyUsed ?: energyAdded
-        val efficiency = if (energyUsed > 0) (energyAdded / energyUsed) * 100 else 100.0
+        // TeslaMate has historically exposed incomplete or inconsistent charge-energy values.
+        // Keep the upstream reading as reported data, rather than substituting energy added and
+        // presenting a fabricated 100% efficiency.
+        val energyUsed = detail.chargeEnergyUsed?.takeIf { it > 0.0 }
+        val efficiency = energyUsed
+            ?.takeIf { it >= energyAdded && energyAdded > 0.0 }
+            ?.let { (energyAdded / it) * 100.0 }
 
         return ChargeDetailStats(
             powerMax = powerMax,
@@ -67,15 +72,19 @@ object ChargeStatsCalculator {
     }
 
     /**
-     * Detect if this is a DC charge using Teslamate's logic:
-     * DC charging has charger_phases = 0 or null (bypasses onboard charger)
-     * AC charging has charger_phases = 1 or 2 (for triphasic line)
+     * Returns a classification only when the captured telemetry explicitly supports it.
+     *
+     * A missing phase is not evidence of DC charging: TeslaMate data can omit charger details,
+     * particularly for older sessions. `fast_charger_present` is the reliable DC signal here;
+     * positive phase counts are reliable AC signals. The UI labels all other sessions as unknown.
      */
-    fun detectDcCharge(detail: ChargeDetail): Boolean {
-        val points = detail.chargePoints ?: return false
-        val phases = points.mapNotNull { it.chargerDetails?.chargerPhases }
-        val modePhases = phases.filter { it > 0 }.groupingBy { it }.eachCount().maxByOrNull { it.value }?.key
-        return modePhases == null
+    fun detectDcCharge(detail: ChargeDetail): Boolean? {
+        val chargerDetails = detail.chargePoints
+            ?.mapNotNull { it.chargerDetails }
+            .orEmpty()
+        if (chargerDetails.any { it.fastChargerPresent == true }) return true
+        if (chargerDetails.any { (it.chargerPhases ?: 0) > 0 }) return false
+        return null
     }
 
     /**

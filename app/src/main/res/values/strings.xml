@@ -388,6 +388,12 @@
     <!-- ==================== Drive Detail Screen ==================== -->
     <!-- Top bar title -->
     <string name="drive_details_title">Drive Details</string>
+    <string name="drive_detail_label">DRIVE</string>
+    <string name="charge_detail_label">CHARGING SESSION</string>
+    <string name="average_speed">Average speed</string>
+    <string name="sampled_average">Sampled average</string>
+    <string name="reported">Reported</string>
+    <string name="charger_type_unavailable">CHARGER TYPE UNAVAILABLE</string>
 
     <!-- Route card labels -->
     <string name="from">From</string>
