@@ -37,8 +37,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import com.matedroid.R
 import com.matedroid.domain.ChargingAnalyticsPeriod
 import com.matedroid.domain.ChargingAnalyticsSnapshot
+import com.matedroid.domain.QualityReason
+import com.matedroid.domain.unavailableReasonBreakdown
 import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
 import com.matedroid.ui.components.BarChartData
 import com.matedroid.ui.components.InteractiveBarChart
@@ -142,7 +146,17 @@ private fun ChargingAnalyticsContent(
                 Metric("Sessions", snapshot.totalSessions.toString())
             }
             Text("Cost coverage ${snapshot.coveragePercent ?: 0}% · ${snapshot.pricedSessions} of ${snapshot.totalSessions} costed/free · ${snapshot.unavailableSessions} unavailable", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (snapshot.unavailableSessions > 0) UnavailableReasonBreakdown(snapshot)
         }
+    }
+}
+
+@Composable
+private fun UnavailableReasonBreakdown(snapshot: ChargingAnalyticsSnapshot) {
+    val breakdown = snapshot.unavailableReasonBreakdown()
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        breakdown[QualityReason.MISSING_RATE]?.let { Text(stringResource(R.string.charging_reason_count_missing_rate, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        breakdown[QualityReason.MISSING_ENERGY]?.let { Text(stringResource(R.string.charging_reason_count_missing_energy, it), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 

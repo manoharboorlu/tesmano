@@ -4,10 +4,8 @@
 
 - Repository: `/Users/boorlu/Developer/tesmano`
 - Branch: `develop`
-- Local HEAD: `7fbab55783b36474102cec1d06638ec5078825b0`
-- Local Phase 7A commit: `feat: add TesMano recurring routes and advanced tags`
-- `origin/develop`: `ae8fcc15713380f9f6cc67ec0494688d450b0a42`
-- Phase 7A is local and unpushed; `develop` is one commit ahead of `origin/develop`.
+- `origin/develop`: `b18a610530527916fcf618439553484e102fa511` (Phase 7A and this handoff are pushed)
+- Local Phase 8A commit: `feat: add TesMano data quality insights`, local and unpushed.
 - Worktree was clean when this handoff was written.
 - `origin` is the TesMano fork; `upstream` is `vide/matedroid`.
 
@@ -59,7 +57,8 @@ Recent phases are local to TesMano. No work has changed TeslaMate, TeslaMateApi,
 - **Phase 4** (`0da5c50`): local Smart Places, map-first place editing, Home/Work/Custom geofences, deterministic commute and initial tag override foundation.
 - **Phase 5** (`3492f0b`, `5e68f95`): local effective-dated Charging Cost Engine, manual/free overrides, and cost analytics.
 - **Phase 6** (`15a8ee9`, `ae8fcc1`): battery analytics, robust usable-capacity estimate/baseline/confidence, and dynamic Real-World Range.
-- **Phase 7A** (`7fbab55`, local/unpushed): endpoint-based recurring routes and reusable manual drive tags.
+- **Phase 7A** (`7fbab55`): endpoint-based recurring routes and reusable manual drive tags.
+- **Phase 8A** (local/unpushed): shared data quality/confidence/coverage model and a Data Quality Center; see section 6A and `docs/DATA_QUALITY_MODEL.md`.
 
 ## 6. Current Phase 7A state
 
@@ -85,6 +84,33 @@ Phase 7A is implemented at `7fbab55783b36474102cec1d06638ec5078825b0`.
 ### Current coverage limitation
 
 The physical history currently has endpoints for only **6 / 101** drives. No recurring-route suggestions on that device is therefore correct. Do not lower the threshold or fabricate routes for presentation. Route coverage will naturally improve as users open existing Drive Details. The cover empty/coverage state was physically reviewed; a populated recurring-route detail and its unfolded two-pane state remain pending enough locally cached endpoints.
+
+## 6A. Current Phase 8A state (local, unpushed)
+
+Phase 8A adds a shared data quality/confidence/coverage/provenance model without changing any
+existing domain calculation. Full detail is in `docs/DATA_QUALITY_MODEL.md`; summary:
+
+- `domain/DataQuality.kt` centralizes `MetricSemantic` (MEASURED/DERIVED/ESTIMATED, promoted
+  from the Battery-only `BatteryMetricKind`), `MetricAvailability`, `QualityReason`,
+  `MetricCoverage`, and `MetricQuality`, plus `quality()` extension functions on the existing
+  `BatteryCapacityEstimate`, `RealWorldRange`, `RouteCoverage`, and `ChargingAnalyticsSnapshot`
+  result types. `BatteryConfidence` remains the one cross-feature confidence model; routes and
+  charging intentionally use coverage instead of an invented confidence score.
+- New **Data Quality Center** (`ui/screens/dataquality/`, Settings → Data quality) summarizes
+  Drives, Charging, Battery, and Range health for the selected car via `DataQualityRepository`,
+  which reuses the same calculators/DAOs the existing screens already use — no new network
+  dependency, no history-wide detail fetch.
+- Recurring Routes now shows three distinct empty states (`RouteCoverageState`:
+  `NO_ENDPOINTS` / `PARTIAL_COVERAGE` / `FULL_COVERAGE_NO_PATTERN`) instead of one generic one.
+- Charging Analytics surfaces a compact missing-rate/missing-energy breakdown when sessions are
+  unavailable. Battery Lab's method card now breaks capacity exclusions down per reason instead
+  of a single summed count, and the Real-World Range card shows battery/driving/overall
+  evidence confidence separately. Activity shows a compact route-coverage line near the tag
+  filter only when coverage is partial.
+- Physically verified on the connected Fold 8 cover display at real coverage 8/101 drives
+  (grown from the 6/101 recorded in section 6, confirming incremental enrichment works as
+  designed). Unfolded two-pane layout is implemented (`LocalAdaptiveLayoutInfo.supportsTwoPane`)
+  but not physically observed — the device was folded for this session.
 
 ## 7. Critical data semantics
 
@@ -153,13 +179,13 @@ Run focused tests during implementation. Before completing a behavior change, ru
 
 ## 14. Roadmap and next work
 
-Phases 1–6B are complete and pushed. Phase 7A is implemented locally and awaits review/push. After explicit approval, possible next choices are: (A) Phase 7B recurring-route/pattern refinement, or (B) a separately planned FSD telemetry-sidecar architecture. Other future work includes explicit route auto-tag rules, richer route analytics, contextual range prediction, charging TOU/session fees, and additional records/data-quality tools. Do not choose or begin a phase autonomously.
+Phases 1–7A are complete and pushed. Phase 8A is implemented locally and awaits review/push. After explicit approval, possible next choices include: (A) Phase 8B trip maps with charge stops, (B) Phase 7B recurring-route/pattern refinement, or (C) a separately planned FSD telemetry-sidecar architecture. Other future work includes explicit route auto-tag rules, richer route analytics, contextual range prediction, charging TOU/session fees, and CSV export. Do not choose or begin a phase autonomously.
 
 ## 15. Tomorrow startup procedure
 
 Before modifying anything:
 
-1. Read `CLAUDE.md`, `AGENTS.md`, this handoff, `docs/TESMANO_FEATURE_ROADMAP.md`, and `docs/TESLAMATE_API_CONTRACT.md`.
+1. Read `CLAUDE.md`, `AGENTS.md`, this handoff, `docs/TESMANO_FEATURE_ROADMAP.md`, `docs/TESLAMATE_API_CONTRACT.md`, and (for data-quality-adjacent work) `docs/DATA_QUALITY_MODEL.md`.
 2. Run:
    ```sh
    git status --short

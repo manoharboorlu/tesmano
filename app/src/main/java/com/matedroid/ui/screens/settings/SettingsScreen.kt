@@ -88,6 +88,7 @@ fun SettingsScreen(
     onNavigateToDashboard: () -> Unit,
     onNavigateToPalettePreview: () -> Unit = {},
     onNavigateToSmartPlaces: () -> Unit = {},
+    onNavigateToDataQuality: () -> Unit = {},
     viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -134,6 +135,7 @@ fun SettingsScreen(
                 onSave = { viewModel.saveSettings(onNavigateToDashboard) },
                 onPalettePreview = onNavigateToPalettePreview,
                 onSmartPlaces = onNavigateToSmartPlaces,
+                onDataQuality = onNavigateToDataQuality,
                 onForceResync = viewModel::forceResync,
                 onSimulateTpmsWarning = viewModel::simulateTpmsWarning,
                 onClearTpmsWarning = viewModel::clearTpmsWarning,
@@ -207,6 +209,7 @@ private fun SettingsContent(
     onSave: () -> Unit,
     onPalettePreview: () -> Unit = {},
     onSmartPlaces: () -> Unit = {},
+    onDataQuality: () -> Unit = {},
     onForceResync: () -> Unit = {},
     onSimulateTpmsWarning: (TirePosition) -> Unit = {},
     onClearTpmsWarning: () -> Unit = {},
@@ -654,6 +657,12 @@ private fun SettingsContent(
 
         OutlinedButton(onClick = onSmartPlaces, modifier = Modifier.fillMaxWidth()) {
             Text("Smart Places")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedButton(onClick = onDataQuality, modifier = Modifier.fillMaxWidth()) {
+            Text(stringResource(R.string.settings_data_quality))
         }
 
         Spacer(modifier = Modifier.height(16.dp))

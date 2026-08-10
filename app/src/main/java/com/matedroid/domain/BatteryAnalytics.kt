@@ -7,8 +7,7 @@ import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.math.abs
 
-/** Provenance is deliberately visible wherever Battery Lab presents a metric. */
-enum class BatteryMetricKind { MEASURED, DERIVED, ESTIMATED }
+/** Provenance is deliberately visible wherever Battery Lab presents a metric. See [MetricSemantic]. */
 enum class BatteryConfidence { LOW, MEDIUM, HIGH }
 enum class CapacityExclusion { MISSING_SOC, SMALL_SOC_SPAN, MISSING_ENERGY, IMPLAUSIBLE, OUTLIER }
 

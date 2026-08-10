@@ -28,16 +28,21 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.matedroid.R
 import com.matedroid.domain.BatteryAnalyticsSnapshot
-import com.matedroid.domain.BatteryMetricKind
 import com.matedroid.domain.EfficiencyWindow
+import com.matedroid.domain.MetricSemantic
+import com.matedroid.domain.quality
 import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
 import com.matedroid.ui.components.BarChartData
 import com.matedroid.ui.components.InteractiveBarChart
+import com.matedroid.ui.components.explanationRes
+import com.matedroid.ui.components.labelRes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,7 +74,7 @@ fun BatteryScreen(carId: Int, efficiency: Double?, exteriorColor: String? = null
     Text(range?.toTenMiles?.let { "%.0f mi to 10%%".format(it) } ?: "Real-world range unavailable", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
     Text(range?.toZeroMiles?.let { "%.0f mi to 0%%".format(it) } ?: "Needs current SOC, usable-capacity estimate, and enough recent driving.", color = MaterialTheme.colorScheme.onSurfaceVariant)
     Text(state.efficiency?.whPerMile?.let { "%.0f Wh/mi · %s represented · %d drives".format(it, "%.1f mi".format(state.efficiency!!.miles), state.efficiency!!.drives) } ?: "Efficiency unavailable")
-    Text(range?.confidence?.let { "$it confidence" } ?: "Insufficient coverage", style = MaterialTheme.typography.bodySmall)
+    RangeEvidence(state)
     LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         item { WindowChip(EfficiencyWindow.Mi25, state.window, onWindow) }; item { WindowChip(EfficiencyWindow.Mi50, state.window, onWindow) }; item { WindowChip(EfficiencyWindow.Mi100, state.window, onWindow) }; item { WindowChip(EfficiencyWindow.Days7, state.window, onWindow) }; item { WindowChip(EfficiencyWindow.Days30, state.window, onWindow) }
     }
@@ -78,12 +83,29 @@ fun BatteryScreen(carId: Int, efficiency: Double?, exteriorColor: String? = null
 } }
 @Composable private fun WindowChip(window: EfficiencyWindow, selected: EfficiencyWindow, onWindow: (EfficiencyWindow) -> Unit) = FilterChip(selected == window, { onWindow(window) }, { Text(window.label) })
 
+@Composable private fun RangeEvidence(state: BatteryUiState) {
+    val range = state.range
+    val efficiency = state.efficiency
+    if (range == null || efficiency == null) return
+    if (range.confidence != null) {
+        Text(
+            "${stringResource(R.string.range_evidence_battery)} ${state.analytics?.capacity?.confidence?.let { stringResource(it.labelRes()) } ?: stringResource(R.string.range_evidence_unavailable)} · " +
+                "${stringResource(R.string.range_evidence_driving)} ${efficiency.confidence?.let { stringResource(it.labelRes()) } ?: stringResource(R.string.range_evidence_unavailable)} · " +
+                "${stringResource(R.string.range_evidence_overall)} ${stringResource(range.confidence.labelRes())}",
+            style = MaterialTheme.typography.bodySmall
+        )
+    } else {
+        val reason = range.quality(efficiency, state.analytics?.capacity?.kwh != null).reason
+        Text(reason?.let { stringResource(it.explanationRes()) } ?: stringResource(R.string.range_evidence_unavailable), style = MaterialTheme.typography.bodySmall)
+    }
+}
+
 @Composable private fun CapacitySummary(data: BatteryAnalyticsSnapshot) = Card(Modifier.fillMaxWidth()) { Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-    Label("BATTERY · ${BatteryMetricKind.ESTIMATED}")
+    Label("BATTERY · ${MetricSemantic.ESTIMATED}")
     val capacity = data.capacity
     Text(capacity.kwh?.let { "%.1f kWh".format(it) } ?: "Unavailable", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
     Text("Estimated usable capacity", color = MaterialTheme.colorScheme.onSurfaceVariant)
-    Text(capacity.confidence?.let { "$it confidence · ${capacity.accepted.size} accepted samples" } ?: "No reliable capacity samples", style = MaterialTheme.typography.bodyMedium)
+    Text(capacity.confidence?.let { "${stringResource(it.labelRes())} · ${capacity.accepted.size} accepted samples" } ?: "No reliable capacity samples", style = MaterialTheme.typography.bodyMedium)
     capacity.changeFromBaselinePercent?.let { Text("Change vs observed baseline  %+.1f%%".format(it), style = MaterialTheme.typography.titleSmall) }
 } }
 
@@ -117,5 +139,9 @@ fun BatteryScreen(carId: Int, efficiency: Double?, exteriorColor: String? = null
     Text("Battery-added kWh ÷ meaningful SOC increase. Grid energy is not used because charging losses would inflate capacity.", color = MaterialTheme.colorScheme.onSurfaceVariant)
     Text("SOC is recorded in whole percentages, so the 12% minimum span reduces quantization noise. Capacity is rounded to 0.1 kWh. Small SOC changes, incomplete data, impossible values, and outliers are excluded. This is not Tesla's official battery diagnostic.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     Text("Accepted ${data.capacity.accepted.size} · Excluded ${data.capacity.exclusions.values.sum()}", style = MaterialTheme.typography.bodySmall)
+    if (data.capacity.exclusions.isNotEmpty()) {
+        val parts = data.capacity.exclusions.entries.map { (reason, count) -> "$count ${stringResource(reason.labelRes())}" }
+        Text(parts.joinToString(" · "), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
 } }
 @Composable private fun Label(value: String) = Text(value, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

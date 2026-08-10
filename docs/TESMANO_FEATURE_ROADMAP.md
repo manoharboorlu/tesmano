@@ -34,13 +34,23 @@ Redesign Activity plus Drive and Charge detail experiences while preserving the 
 
 ## Phase 7 — Advanced Analytics and Lab
 
-### Phase 7A — Recurring routes and advanced tags — implemented locally, pending approval/push
+### Phase 7A — Recurring routes and advanced tags — complete
 
 - Endpoint-based recurring-route discovery, local user route metadata, and manual multi-tags.
 - Smart Place priority, conservative unmatched-endpoint clustering, and Activity filtering.
 - Current physical history has limited endpoint coverage; see `RECURRING_ROUTE_INTELLIGENCE.md`.
 
+### Phase 8A — Data quality and confidence — implemented locally, pending approval/push
+
+- Shared MEASURED/DERIVED/ESTIMATED, availability, coverage, and structured-reason model
+  reused across Battery, Real-World Range, Recurring Routes, and Charging Cost; see
+  `docs/DATA_QUALITY_MODEL.md`.
+- Data Quality Center (Settings → Data quality) summarizing local drive/charging/battery/range
+  coverage and confidence for the selected car.
+- Distinct Recurring Routes empty states (no endpoints / partial coverage / no repeated
+  pattern), a compact charging cost unavailable-reason breakdown, and a per-reason battery
+  capacity exclusion breakdown.
+
 - Trip maps with charge stops.
-- Data-quality and confidence indicators.
 - CSV export.
 - Advanced Analytics and Lab experiences.

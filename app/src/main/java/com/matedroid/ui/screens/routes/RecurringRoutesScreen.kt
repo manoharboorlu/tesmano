@@ -43,8 +43,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.ui.res.stringResource
+import com.matedroid.R
 import com.matedroid.domain.RecurringRoute
 import com.matedroid.domain.RecurringRoutesSnapshot
+import com.matedroid.domain.RouteCoverageState
+import com.matedroid.domain.state
 import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
 import com.matedroid.util.formatDurationCompact
 import java.time.Instant
@@ -87,10 +91,18 @@ private fun EmptyRoutes(snapshot: RecurringRoutesSnapshot?, modifier: Modifier) 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(Icons.Filled.Route, null, tint = MaterialTheme.colorScheme.primary)
         Spacer(Modifier.height(12.dp))
-        Text("No recurring routes yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        val coverage = snapshot?.coverage
+        val (titleRes, bodyRes) = when (coverage?.state()) {
+            null, RouteCoverageState.NO_ENDPOINTS -> R.string.routes_empty_no_endpoints_title to R.string.routes_empty_no_endpoints_body
+            RouteCoverageState.PARTIAL_COVERAGE -> R.string.routes_empty_partial_title to R.string.routes_empty_partial_body
+            RouteCoverageState.FULL_COVERAGE_NO_PATTERN -> R.string.routes_empty_no_pattern_title to R.string.routes_empty_no_pattern_body
+        }
+        Text(stringResource(titleRes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         Spacer(Modifier.height(6.dp))
-        Text("Routes appear after three completed drives with locally known endpoints.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-        snapshot?.let { Text("Endpoint coverage: ${it.coverage.knownEndpoints} of ${it.coverage.totalDrives} drives", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(top = 12.dp)) }
+        Text(
+            if (coverage == null) stringResource(bodyRes) else stringResource(bodyRes, coverage.knownEndpoints, coverage.totalDrives),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -99,7 +111,7 @@ private fun RouteList(snapshot: RecurringRoutesSnapshot, selectedKey: String?, o
     LazyColumn(modifier = modifier, contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         item {
             Text("RECURRING ROUTES", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Text("Based on ${snapshot.coverage.knownEndpoints} of ${snapshot.coverage.totalDrives} drives with known endpoints", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.routes_coverage_summary, snapshot.coverage.knownEndpoints, snapshot.coverage.totalDrives), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         items(snapshot.routes, key = { it.key }) { route ->
             Card(Modifier.fillMaxWidth().clickable { onSelect(route.key) }) {

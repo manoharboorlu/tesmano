@@ -21,6 +21,7 @@ import com.matedroid.data.sync.SyncManager
 import com.matedroid.domain.model.SyncPhase
 import com.matedroid.domain.model.SyncProgress
 import com.matedroid.domain.DrivePlaceContext
+import com.matedroid.domain.RouteCoverage
 import com.matedroid.domain.SmartPlacesRepository
 import com.matedroid.domain.RouteTagsRepository
 import com.matedroid.domain.DriveTagSet
@@ -74,7 +75,8 @@ data class ActivityTimelineUiState(
     val drivePlaces: Map<Int, DrivePlaceContext> = emptyMap(),
     val driveTags: Map<Int, DriveTagSet> = emptyMap(),
     val availableTags: List<UserDriveTag> = emptyList(),
-    val tagFilter: ActivityTagFilter? = null
+    val tagFilter: ActivityTagFilter? = null,
+    val routeCoverage: RouteCoverage? = null
 ) {
     val isSyncing: Boolean
         get() = syncProgress?.phase?.let { it !in setOf(SyncPhase.IDLE, SyncPhase.COMPLETE, SyncPhase.ERROR) } == true
@@ -116,6 +118,7 @@ class ActivityTimelineViewModel @Inject constructor(
         carId = id
         observeSync(id)
         loadUnits(id)
+        loadRouteCoverage(id)
         resetAndLoad()
     }
 
@@ -153,7 +156,7 @@ class ActivityTimelineViewModel @Inject constructor(
         chargeOffset = 0
         sourceMayHaveMore = true
         pendingEntries.clear()
-        _uiState.value = ActivityTimelineUiState(units = _uiState.value.units, availableTags = _uiState.value.availableTags, tagFilter = _uiState.value.tagFilter)
+        _uiState.value = ActivityTimelineUiState(units = _uiState.value.units, availableTags = _uiState.value.availableTags, tagFilter = _uiState.value.tagFilter, routeCoverage = _uiState.value.routeCoverage)
         loadPage(initial = true)
     }
 
@@ -216,6 +219,14 @@ class ActivityTimelineViewModel @Inject constructor(
                 }
                 if (progress?.phase == SyncPhase.COMPLETE) resetAndLoad()
             }
+        }
+    }
+
+    /** One-shot per car; reuses the same summary-only computation Recurring Routes already performs. */
+    private fun loadRouteCoverage(id: Int) {
+        viewModelScope.launch {
+            val coverage = routeTagsRepository.recurringRoutes(id).coverage
+            _uiState.update { it.copy(routeCoverage = coverage) }
         }
     }
 

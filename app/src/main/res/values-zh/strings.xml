@@ -1326,4 +1326,111 @@
     <string name="sampled_average">采样平均值</string>
     <string name="reported">已报告</string>
     <string name="charger_type_unavailable">充电器类型不可用</string>
+
+    <!-- ==================== Data Quality (Phase 8A) ==================== -->
+    <!-- Title of the Data Quality Center screen, reached from Settings -->
+    <string name="data_quality_title">数据质量</string>
+    <!-- Shown when no car is available yet to compute local data quality -->
+    <string name="data_quality_unavailable">暂无可用的车辆数据。</string>
+    <!-- Button in Settings that opens the Data Quality Center -->
+    <string name="settings_data_quality">数据质量</string>
+
+    <!-- Section header for cached drive coverage -->
+    <string name="data_quality_drives_title">行程</string>
+    <!-- Headline count of locally cached drive summaries. %1$d is the count -->
+    <string name="data_quality_drives_total">已缓存 %1$d 次行程</string>
+    <!-- Endpoint coverage used for recurring-route discovery. %1$d known, %2$d total, %3$d percent -->
+    <string name="data_quality_drives_endpoint_coverage">%1$d / %2$d 次行程已知起点和终点（%3$d%%）</string>
+    <!-- Count of drives enriched by opening their Drive Detail. %1$d is the count -->
+    <string name="data_quality_drives_detail_enriched">已通过打开行程详情丰富了 %1$d 次行程</string>
+    <!-- Explains how endpoint coverage grows without bulk downloads -->
+    <string name="data_quality_drives_hint">打开较早的行程详情会逐步提高端点覆盖率。TesMano 不会为加快速度而批量下载行程详情。</string>
+
+    <!-- Section header for charging cost coverage -->
+    <string name="data_quality_charging_title">充电</string>
+    <!-- Charging cost coverage headline. %1$d priced/free, %2$d total, %3$d percent -->
+    <string name="data_quality_charging_coverage">%1$d / %2$d 次充电已计费或免费（%3$d%%）</string>
+    <!-- Compact breakdown of free/manual/unavailable charging sessions. %1$d free, %2$d manual, %3$d unavailable -->
+    <string name="data_quality_charging_breakdown">%1$d 次免费 · %2$d 次手动调整 · %3$d 次不可用</string>
+    <!-- Count of charge sessions with no applicable local rate. %1$d is the count -->
+    <string name="charging_reason_count_missing_rate">%1$d 次无适用费率</string>
+    <!-- Count of charge sessions missing reliable reported energy. %1$d is the count -->
+    <string name="charging_reason_count_missing_energy">%1$d 次缺少可靠的能量数据</string>
+
+    <!-- Section header for battery capacity data quality -->
+    <string name="data_quality_battery_title">电池</string>
+    <!-- Accepted vs excluded capacity samples. %1$d accepted, %2$d excluded -->
+    <string name="data_quality_battery_samples">已接受 %1$d 个 · 已排除 %2$d 个</string>
+    <string name="data_quality_battery_baseline_available">已获得观测基线</string>
+    <string name="data_quality_battery_baseline_unavailable">观测基线需要更多被接受的样本</string>
+    <string name="data_quality_battery_efficiency_available">充电效率可用</string>
+    <string name="data_quality_battery_efficiency_unavailable">充电效率不可用</string>
+    <string name="data_quality_battery_rated_range_history">历史额定续航趋势不可用：本地未保留相关样本。</string>
+
+    <!-- Section header for Real-World Range data quality -->
+    <string name="data_quality_range_title">续航</string>
+    <!-- The efficiency window used for the current range estimate. %1$s is the window label, e.g. "50 mi" -->
+    <string name="data_quality_range_window">时间窗口：%1$s</string>
+    <string name="range_evidence_battery">电池数据</string>
+    <string name="range_evidence_driving">驾驶数据</string>
+    <string name="range_evidence_overall">综合</string>
+    <string name="range_evidence_unavailable">不可用</string>
+
+    <!-- Section header for the always-unavailable limitations explained once on the Data Quality screen -->
+    <string name="data_quality_limitations_title">已知限制</string>
+    <string name="data_quality_limitations_rated_range">历史额定续航趋势以及缺失的 Tesla 估算续航永远不会被替代，会始终显示为不可用。</string>
+    <string name="data_quality_limitations_temperature">当前后端协议中不包含电池温度数据，此功能暂缓提供。</string>
+    <string name="data_quality_limitations_no_backfill">TesMano 不会为补齐覆盖率而批量下载行程或充电详情。</string>
+
+    <!-- Shared provenance vocabulary: MEASURED -->
+    <string name="quality_semantic_measured">实测</string>
+    <!-- Shared provenance vocabulary: DERIVED -->
+    <string name="quality_semantic_derived">推导</string>
+    <!-- Shared provenance vocabulary: ESTIMATED -->
+    <string name="quality_semantic_estimated">估算</string>
+    <string name="quality_availability_available">可用</string>
+    <string name="quality_availability_partial">部分可用</string>
+    <string name="quality_availability_unavailable">不可用</string>
+    <string name="quality_confidence_low">置信度低</string>
+    <string name="quality_confidence_medium">置信度中等</string>
+    <string name="quality_confidence_high">置信度高</string>
+
+    <!-- Structured reason explanations shown wherever a metric is partial or unavailable -->
+    <string name="quality_reason_insufficient_history">本地历史数据还不够。</string>
+    <string name="quality_reason_missing_endpoints">行程端点尚未在本地缓存。</string>
+    <string name="quality_reason_missing_rate">该地点没有适用的充电费率。</string>
+    <string name="quality_reason_missing_energy">此次充电未上报可靠的能量数据。</string>
+    <string name="quality_reason_incoherent_energy">上报的电网能量与电池能量不一致。</string>
+    <string name="quality_reason_insufficient_soc_span">没有足够的充电记录覆盖足够宽的电量变化范围。</string>
+    <string name="quality_reason_missing_capacity_estimate">需要先获得可用容量估算值。</string>
+    <string name="quality_reason_insufficient_drive_coverage">该时间窗口内没有足够的近期驾驶数据。</string>
+    <string name="quality_reason_source_not_retained">本地摘要数据中未保留此值。</string>
+    <string name="quality_reason_source_missing_or_zero">车辆或后端未上报此值。</string>
+    <string name="quality_reason_mixed_currency">各充电记录使用不同货币，因此总额未合并计算。</string>
+    <string name="quality_reason_detail_not_cached">尚未打开此行程或充电详情。</string>
+    <string name="quality_reason_no_matching_smart_place">没有智能地点与此位置匹配。</string>
+    <string name="quality_reason_no_valid_samples">目前还没有可靠的样本数据。</string>
+
+    <!-- Short lowercase labels for battery capacity sample exclusion reasons, shown as "2 small SOC span" -->
+    <string name="battery_exclusion_missing_soc">缺少电量数据</string>
+    <string name="battery_exclusion_small_span">电量变化范围过窄</string>
+    <string name="battery_exclusion_missing_energy">缺少能量数据</string>
+    <string name="battery_exclusion_implausible">数值不合理</string>
+    <string name="battery_exclusion_outlier">异常值</string>
+
+    <!-- Recurring Routes empty states: no known endpoints at all -->
+    <string name="routes_empty_no_endpoints_title">尚无已知的行程端点</string>
+    <!-- %1$d known endpoints, %2$d total drives -->
+    <string name="routes_empty_no_endpoints_body">%1$d / %2$d 次行程已知起点和终点。TesMano 会在你打开行程详情时逐步学习端点——打开一些较早的行程即可开始。</string>
+    <!-- Recurring Routes empty states: some but not all drives have known endpoints -->
+    <string name="routes_empty_partial_title">路线数据还不够</string>
+    <string name="routes_empty_partial_body">%1$d / %2$d 次行程已知起点和终点。随着更多行程端点被缓存，路线会逐渐被发现——打开较早的行程详情可逐步丰富覆盖率。</string>
+    <!-- Recurring Routes empty states: full endpoint coverage but no route repeated three times -->
+    <string name="routes_empty_no_pattern_title">暂无常用路线</string>
+    <string name="routes_empty_no_pattern_body">端点覆盖率已完整（%1$d / %2$d 次行程），但目前还没有路线重复达到三次。</string>
+    <!-- Coverage line shown above the recurring routes list. %1$d known endpoints, %2$d total drives -->
+    <string name="routes_coverage_summary">基于 %1$d / %2$d 次已知端点的行程</string>
+
+    <!-- Compact route-coverage affordance shown in Activity, near tag/route filtering. %1$d known, %2$d total -->
+    <string name="activity_route_coverage">常用路线基于 %1$d / %2$d 次已知端点的行程</string>
 </resources>

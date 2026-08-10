@@ -142,7 +142,8 @@ fun ActivityTimelineScreen(
                         onFilterSelected = viewModel::setFilter,
                         tagFilter = uiState.tagFilter,
                         availableTags = uiState.availableTags,
-                        onTagFilterSelected = viewModel::setTagFilter
+                        onTagFilterSelected = viewModel::setTagFilter,
+                        routeCoverage = uiState.routeCoverage
                     )
                     when {
                         uiState.isLoading -> LoadingActivity()
@@ -189,7 +190,8 @@ private fun ActivityHeader(
     onFilterSelected: (ActivityFilter) -> Unit,
     tagFilter: ActivityTagFilter?,
     availableTags: List<com.matedroid.data.local.entity.UserDriveTag>,
-    onTagFilterSelected: (ActivityTagFilter?) -> Unit
+    onTagFilterSelected: (ActivityTagFilter?) -> Unit,
+    routeCoverage: com.matedroid.domain.RouteCoverage? = null
 ) {
     var choosingTag by remember { androidx.compose.runtime.mutableStateOf(false) }
     Column(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp)) {
@@ -204,6 +206,14 @@ private fun ActivityHeader(
             TimelineFilterChip(ActivityFilter.DRIVES, filter, onFilterSelected)
             TimelineFilterChip(ActivityFilter.CHARGES, filter, onFilterSelected)
             FilterChip(selected = tagFilter != null, onClick = { choosingTag = true }, label = { Text(when (val active = tagFilter) { null -> "Tags"; ActivityTagFilter.Commute -> "Commute"; is ActivityTagFilter.User -> active.name }) })
+        }
+        if (routeCoverage != null && routeCoverage.knownEndpoints < routeCoverage.totalDrives) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                stringResource(R.string.activity_route_coverage, routeCoverage.knownEndpoints, routeCoverage.totalDrives),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.outline
+            )
         }
         if (choosingTag) AlertDialog(
             onDismissRequest = { choosingTag = false },

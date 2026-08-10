@@ -1438,4 +1438,111 @@
         <item quantity="one">%d comparable charge nearby</item>
         <item quantity="other">%d comparable charges nearby</item>
     </plurals>
+
+    <!-- ==================== Data Quality (Phase 8A) ==================== -->
+    <!-- Title of the Data Quality Center screen, reached from Settings -->
+    <string name="data_quality_title">Data Quality</string>
+    <!-- Shown when no car is available yet to compute local data quality -->
+    <string name="data_quality_unavailable">No car data available yet.</string>
+    <!-- Button in Settings that opens the Data Quality Center -->
+    <string name="settings_data_quality">Data quality</string>
+
+    <!-- Section header for cached drive coverage -->
+    <string name="data_quality_drives_title">Drives</string>
+    <!-- Headline count of locally cached drive summaries. %1$d is the count -->
+    <string name="data_quality_drives_total">%1$d cached drives</string>
+    <!-- Endpoint coverage used for recurring-route discovery. %1$d known, %2$d total, %3$d percent -->
+    <string name="data_quality_drives_endpoint_coverage">%1$d of %2$d drives have known start and end points (%3$d%%)</string>
+    <!-- Count of drives enriched by opening their Drive Detail. %1$d is the count -->
+    <string name="data_quality_drives_detail_enriched">%1$d drives enriched from an opened Drive Detail</string>
+    <!-- Explains how endpoint coverage grows without bulk downloads -->
+    <string name="data_quality_drives_hint">Endpoint coverage grows as you open older Drive Detail screens. TesMano never bulk-downloads drive details to speed this up.</string>
+
+    <!-- Section header for charging cost coverage -->
+    <string name="data_quality_charging_title">Charging</string>
+    <!-- Charging cost coverage headline. %1$d priced/free, %2$d total, %3$d percent -->
+    <string name="data_quality_charging_coverage">%1$d of %2$d sessions costed or free (%3$d%%)</string>
+    <!-- Compact breakdown of free/manual/unavailable charging sessions. %1$d free, %2$d manual, %3$d unavailable -->
+    <string name="data_quality_charging_breakdown">%1$d free · %2$d manual override · %3$d unavailable</string>
+    <!-- Count of charge sessions with no applicable local rate. %1$d is the count -->
+    <string name="charging_reason_count_missing_rate">%1$d no applicable rate</string>
+    <!-- Count of charge sessions missing reliable reported energy. %1$d is the count -->
+    <string name="charging_reason_count_missing_energy">%1$d missing reliable energy</string>
+
+    <!-- Section header for battery capacity data quality -->
+    <string name="data_quality_battery_title">Battery</string>
+    <!-- Accepted vs excluded capacity samples. %1$d accepted, %2$d excluded -->
+    <string name="data_quality_battery_samples">%1$d accepted · %2$d excluded</string>
+    <string name="data_quality_battery_baseline_available">Observed baseline available</string>
+    <string name="data_quality_battery_baseline_unavailable">Observed baseline needs more accepted samples</string>
+    <string name="data_quality_battery_efficiency_available">Charging efficiency available</string>
+    <string name="data_quality_battery_efficiency_unavailable">Charging efficiency unavailable</string>
+    <string name="data_quality_battery_rated_range_history">Historical rated-range trend unavailable — samples aren\'t retained locally.</string>
+
+    <!-- Section header for Real-World Range data quality -->
+    <string name="data_quality_range_title">Range</string>
+    <!-- The efficiency window used for the current range estimate. %1$s is the window label, e.g. "50 mi" -->
+    <string name="data_quality_range_window">Window: %1$s</string>
+    <string name="range_evidence_battery">Battery evidence</string>
+    <string name="range_evidence_driving">Driving evidence</string>
+    <string name="range_evidence_overall">Overall</string>
+    <string name="range_evidence_unavailable">Unavailable</string>
+
+    <!-- Section header for the always-unavailable limitations explained once on the Data Quality screen -->
+    <string name="data_quality_limitations_title">Known limitations</string>
+    <string name="data_quality_limitations_rated_range">Historical rated-range trend and a missing Tesla Estimated Range are never substituted — they stay unavailable.</string>
+    <string name="data_quality_limitations_temperature">Battery temperature isn\'t in the current backend contract and is deferred.</string>
+    <string name="data_quality_limitations_no_backfill">TesMano never bulk-downloads Drive or Charge details to fill in coverage.</string>
+
+    <!-- Shared provenance vocabulary: MEASURED -->
+    <string name="quality_semantic_measured">Measured</string>
+    <!-- Shared provenance vocabulary: DERIVED -->
+    <string name="quality_semantic_derived">Derived</string>
+    <!-- Shared provenance vocabulary: ESTIMATED -->
+    <string name="quality_semantic_estimated">Estimated</string>
+    <string name="quality_availability_available">Available</string>
+    <string name="quality_availability_partial">Partial</string>
+    <string name="quality_availability_unavailable">Unavailable</string>
+    <string name="quality_confidence_low">Low confidence</string>
+    <string name="quality_confidence_medium">Medium confidence</string>
+    <string name="quality_confidence_high">High confidence</string>
+
+    <!-- Structured reason explanations shown wherever a metric is partial or unavailable -->
+    <string name="quality_reason_insufficient_history">Not enough local history yet.</string>
+    <string name="quality_reason_missing_endpoints">Drive endpoints aren\'t cached locally yet.</string>
+    <string name="quality_reason_missing_rate">No charging rate applies to this location.</string>
+    <string name="quality_reason_missing_energy">Reliable energy wasn\'t reported for this session.</string>
+    <string name="quality_reason_incoherent_energy">Reported grid and battery energy don\'t agree.</string>
+    <string name="quality_reason_insufficient_soc_span">Not enough charge sessions crossed a wide enough battery level range.</string>
+    <string name="quality_reason_missing_capacity_estimate">A usable-capacity estimate is needed first.</string>
+    <string name="quality_reason_insufficient_drive_coverage">Not enough recent driving data for this window.</string>
+    <string name="quality_reason_source_not_retained">This value isn\'t retained in local summaries.</string>
+    <string name="quality_reason_source_missing_or_zero">The vehicle or backend hasn\'t reported this value.</string>
+    <string name="quality_reason_mixed_currency">Sessions use different currencies, so totals aren\'t combined.</string>
+    <string name="quality_reason_detail_not_cached">This drive or charge detail hasn\'t been opened yet.</string>
+    <string name="quality_reason_no_matching_smart_place">No Smart Place matches this location.</string>
+    <string name="quality_reason_no_valid_samples">No reliable samples are available yet.</string>
+
+    <!-- Short lowercase labels for battery capacity sample exclusion reasons, shown as "2 small SOC span" -->
+    <string name="battery_exclusion_missing_soc">missing battery level</string>
+    <string name="battery_exclusion_small_span">small battery-level span</string>
+    <string name="battery_exclusion_missing_energy">missing energy</string>
+    <string name="battery_exclusion_implausible">implausible</string>
+    <string name="battery_exclusion_outlier">outlier</string>
+
+    <!-- Recurring Routes empty states: no known endpoints at all -->
+    <string name="routes_empty_no_endpoints_title">No known drive endpoints yet</string>
+    <!-- %1$d known endpoints, %2$d total drives -->
+    <string name="routes_empty_no_endpoints_body">%1$d of %2$d drives have known start and destination points. TesMano learns endpoints incrementally as Drive Detail is opened — open a few older drives to get started.</string>
+    <!-- Recurring Routes empty states: some but not all drives have known endpoints -->
+    <string name="routes_empty_partial_title">Not enough route data yet</string>
+    <string name="routes_empty_partial_body">%1$d of %2$d drives have known start and destination points. Routes become discoverable as more drive endpoints are cached — open Drive Detail for older drives to gradually enrich coverage.</string>
+    <!-- Recurring Routes empty states: full endpoint coverage but no route repeated three times -->
+    <string name="routes_empty_no_pattern_title">No recurring routes yet</string>
+    <string name="routes_empty_no_pattern_body">Endpoint coverage is complete (%1$d of %2$d drives), but no route has repeated at least three times yet.</string>
+    <!-- Coverage line shown above the recurring routes list. %1$d known endpoints, %2$d total drives -->
+    <string name="routes_coverage_summary">Based on %1$d of %2$d drives with known endpoints</string>
+
+    <!-- Compact route-coverage affordance shown in Activity, near tag/route filtering. %1$d known, %2$d total -->
+    <string name="activity_route_coverage">Recurring routes based on %1$d of %2$d drives with known endpoints</string>
 </resources>

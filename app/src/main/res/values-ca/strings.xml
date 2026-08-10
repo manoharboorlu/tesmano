@@ -1304,4 +1304,111 @@
     <string name="sampled_average">Mitjana mostrejada</string>
     <string name="reported">Informat</string>
     <string name="charger_type_unavailable">TIPUS DE CARREGADOR NO DISPONIBLE</string>
+
+    <!-- ==================== Data Quality (Phase 8A) ==================== -->
+    <!-- Title of the Data Quality Center screen, reached from Settings -->
+    <string name="data_quality_title">Qualitat de les dades</string>
+    <!-- Shown when no car is available yet to compute local data quality -->
+    <string name="data_quality_unavailable">Encara no hi ha dades del vehicle disponibles.</string>
+    <!-- Button in Settings that opens the Data Quality Center -->
+    <string name="settings_data_quality">Qualitat de les dades</string>
+
+    <!-- Section header for cached drive coverage -->
+    <string name="data_quality_drives_title">Trajectes</string>
+    <!-- Headline count of locally cached drive summaries. %1$d is the count -->
+    <string name="data_quality_drives_total">%1$d trajectes desats</string>
+    <!-- Endpoint coverage used for recurring-route discovery. %1$d known, %2$d total, %3$d percent -->
+    <string name="data_quality_drives_endpoint_coverage">%1$d de %2$d trajectes tenen punts d\'inici i final coneguts (%3$d%%)</string>
+    <!-- Count of drives enriched by opening their Drive Detail. %1$d is the count -->
+    <string name="data_quality_drives_detail_enriched">%1$d trajectes enriquits en obrir un Detall de Trajecte</string>
+    <!-- Explains how endpoint coverage grows without bulk downloads -->
+    <string name="data_quality_drives_hint">La cobertura de punts augmenta en obrir Detalls de Trajecte antics. TesMano mai descarrega detalls en bloc per accelerar-ho.</string>
+
+    <!-- Section header for charging cost coverage -->
+    <string name="data_quality_charging_title">Càrrega</string>
+    <!-- Charging cost coverage headline. %1$d priced/free, %2$d total, %3$d percent -->
+    <string name="data_quality_charging_coverage">%1$d de %2$d sessions amb cost o gratuïtes (%3$d%%)</string>
+    <!-- Compact breakdown of free/manual/unavailable charging sessions. %1$d free, %2$d manual, %3$d unavailable -->
+    <string name="data_quality_charging_breakdown">%1$d gratuïtes · %2$d ajustos manuals · %3$d no disponibles</string>
+    <!-- Count of charge sessions with no applicable local rate. %1$d is the count -->
+    <string name="charging_reason_count_missing_rate">%1$d sense tarifa aplicable</string>
+    <!-- Count of charge sessions missing reliable reported energy. %1$d is the count -->
+    <string name="charging_reason_count_missing_energy">%1$d amb energia no fiable</string>
+
+    <!-- Section header for battery capacity data quality -->
+    <string name="data_quality_battery_title">Bateria</string>
+    <!-- Accepted vs excluded capacity samples. %1$d accepted, %2$d excluded -->
+    <string name="data_quality_battery_samples">%1$d acceptades · %2$d excloses</string>
+    <string name="data_quality_battery_baseline_available">Referència observada disponible</string>
+    <string name="data_quality_battery_baseline_unavailable">La referència observada necessita més mostres acceptades</string>
+    <string name="data_quality_battery_efficiency_available">Eficiència de càrrega disponible</string>
+    <string name="data_quality_battery_efficiency_unavailable">Eficiència de càrrega no disponible</string>
+    <string name="data_quality_battery_rated_range_history">Tendència històrica d\'autonomia nominal no disponible: les mostres no es conserven localment.</string>
+
+    <!-- Section header for Real-World Range data quality -->
+    <string name="data_quality_range_title">Autonomia</string>
+    <!-- The efficiency window used for the current range estimate. %1$s is the window label, e.g. "50 mi" -->
+    <string name="data_quality_range_window">Interval: %1$s</string>
+    <string name="range_evidence_battery">Dades de bateria</string>
+    <string name="range_evidence_driving">Dades de conducció</string>
+    <string name="range_evidence_overall">General</string>
+    <string name="range_evidence_unavailable">No disponible</string>
+
+    <!-- Section header for the always-unavailable limitations explained once on the Data Quality screen -->
+    <string name="data_quality_limitations_title">Limitacions conegudes</string>
+    <string name="data_quality_limitations_rated_range">La tendència històrica d\'autonomia nominal i una Autonomia Estimada Tesla absent mai se substitueixen: romanen no disponibles.</string>
+    <string name="data_quality_limitations_temperature">La temperatura de la bateria no és al contracte actual del backend i queda ajornada.</string>
+    <string name="data_quality_limitations_no_backfill">TesMano mai descarrega en bloc Detalls de Trajecte o Càrrega per completar la cobertura.</string>
+
+    <!-- Shared provenance vocabulary: MEASURED -->
+    <string name="quality_semantic_measured">Mesurat</string>
+    <!-- Shared provenance vocabulary: DERIVED -->
+    <string name="quality_semantic_derived">Derivat</string>
+    <!-- Shared provenance vocabulary: ESTIMATED -->
+    <string name="quality_semantic_estimated">Estimat</string>
+    <string name="quality_availability_available">Disponible</string>
+    <string name="quality_availability_partial">Parcial</string>
+    <string name="quality_availability_unavailable">No disponible</string>
+    <string name="quality_confidence_low">Confiança baixa</string>
+    <string name="quality_confidence_medium">Confiança mitjana</string>
+    <string name="quality_confidence_high">Confiança alta</string>
+
+    <!-- Structured reason explanations shown wherever a metric is partial or unavailable -->
+    <string name="quality_reason_insufficient_history">Encara no hi ha prou historial local.</string>
+    <string name="quality_reason_missing_endpoints">Els punts del trajecte encara no estan desats localment.</string>
+    <string name="quality_reason_missing_rate">Cap tarifa de càrrega s\'aplica a aquest lloc.</string>
+    <string name="quality_reason_missing_energy">No s\'ha reportat energia fiable per a aquesta sessió.</string>
+    <string name="quality_reason_incoherent_energy">L\'energia de xarxa i de bateria reportades no coincideixen.</string>
+    <string name="quality_reason_insufficient_soc_span">No hi ha prou sessions de càrrega amb un interval de nivell de bateria prou ampli.</string>
+    <string name="quality_reason_missing_capacity_estimate">Primer cal una estimació de capacitat útil.</string>
+    <string name="quality_reason_insufficient_drive_coverage">No hi ha prou dades de conducció recents per a aquest interval.</string>
+    <string name="quality_reason_source_not_retained">Aquest valor no es conserva als resums locals.</string>
+    <string name="quality_reason_source_missing_or_zero">El vehicle o el backend no ha reportat aquest valor.</string>
+    <string name="quality_reason_mixed_currency">Les sessions fan servir monedes diferents, per això els totals no es combinen.</string>
+    <string name="quality_reason_detail_not_cached">Aquest detall de trajecte o càrrega encara no s\'ha obert.</string>
+    <string name="quality_reason_no_matching_smart_place">Cap Lloc Intel·ligent coincideix amb aquesta ubicació.</string>
+    <string name="quality_reason_no_valid_samples">Encara no hi ha mostres fiables disponibles.</string>
+
+    <!-- Short lowercase labels for battery capacity sample exclusion reasons, shown as "2 small SOC span" -->
+    <string name="battery_exclusion_missing_soc">nivell de bateria absent</string>
+    <string name="battery_exclusion_small_span">interval de nivell de bateria reduït</string>
+    <string name="battery_exclusion_missing_energy">energia absent</string>
+    <string name="battery_exclusion_implausible">implausible</string>
+    <string name="battery_exclusion_outlier">valor atípic</string>
+
+    <!-- Recurring Routes empty states: no known endpoints at all -->
+    <string name="routes_empty_no_endpoints_title">Encara no hi ha punts de trajecte coneguts</string>
+    <!-- %1$d known endpoints, %2$d total drives -->
+    <string name="routes_empty_no_endpoints_body">%1$d de %2$d trajectes tenen punts d\'inici i destinació coneguts. TesMano aprèn els punts de manera incremental en obrir Detalls de Trajecte: obre alguns trajectes antics per començar.</string>
+    <!-- Recurring Routes empty states: some but not all drives have known endpoints -->
+    <string name="routes_empty_partial_title">Encara no hi ha prou dades de rutes</string>
+    <string name="routes_empty_partial_body">%1$d de %2$d trajectes tenen punts d\'inici i destinació coneguts. Les rutes esdevenen detectables a mesura que es desen més punts: obre Detalls de Trajecte antics per enriquir gradualment la cobertura.</string>
+    <!-- Recurring Routes empty states: full endpoint coverage but no route repeated three times -->
+    <string name="routes_empty_no_pattern_title">Encara no hi ha rutes recurrents</string>
+    <string name="routes_empty_no_pattern_body">La cobertura de punts és completa (%1$d de %2$d trajectes), però cap ruta s\'ha repetit encara almenys tres vegades.</string>
+    <!-- Coverage line shown above the recurring routes list. %1$d known endpoints, %2$d total drives -->
+    <string name="routes_coverage_summary">Basat en %1$d de %2$d trajectes amb punts coneguts</string>
+
+    <!-- Compact route-coverage affordance shown in Activity, near tag/route filtering. %1$d known, %2$d total -->
+    <string name="activity_route_coverage">Rutes recurrents basades en %1$d de %2$d trajectes amb punts coneguts</string>
 </resources>

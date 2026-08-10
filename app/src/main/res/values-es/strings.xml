@@ -1304,4 +1304,111 @@
     <string name="sampled_average">Media de muestras</string>
     <string name="reported">Informado</string>
     <string name="charger_type_unavailable">TIPO DE CARGADOR NO DISPONIBLE</string>
+
+    <!-- ==================== Data Quality (Phase 8A) ==================== -->
+    <!-- Title of the Data Quality Center screen, reached from Settings -->
+    <string name="data_quality_title">Calidad de los datos</string>
+    <!-- Shown when no car is available yet to compute local data quality -->
+    <string name="data_quality_unavailable">Aún no hay datos del vehículo disponibles.</string>
+    <!-- Button in Settings that opens the Data Quality Center -->
+    <string name="settings_data_quality">Calidad de los datos</string>
+
+    <!-- Section header for cached drive coverage -->
+    <string name="data_quality_drives_title">Trayectos</string>
+    <!-- Headline count of locally cached drive summaries. %1$d is the count -->
+    <string name="data_quality_drives_total">%1$d trayectos guardados</string>
+    <!-- Endpoint coverage used for recurring-route discovery. %1$d known, %2$d total, %3$d percent -->
+    <string name="data_quality_drives_endpoint_coverage">%1$d de %2$d trayectos tienen puntos de inicio y fin conocidos (%3$d%%)</string>
+    <!-- Count of drives enriched by opening their Drive Detail. %1$d is the count -->
+    <string name="data_quality_drives_detail_enriched">%1$d trayectos enriquecidos al abrir un Detalle de Trayecto</string>
+    <!-- Explains how endpoint coverage grows without bulk downloads -->
+    <string name="data_quality_drives_hint">La cobertura de puntos aumenta al abrir Detalles de Trayecto antiguos. TesMano nunca descarga detalles en bloque para acelerar esto.</string>
+
+    <!-- Section header for charging cost coverage -->
+    <string name="data_quality_charging_title">Carga</string>
+    <!-- Charging cost coverage headline. %1$d priced/free, %2$d total, %3$d percent -->
+    <string name="data_quality_charging_coverage">%1$d de %2$d sesiones con coste o gratuitas (%3$d%%)</string>
+    <!-- Compact breakdown of free/manual/unavailable charging sessions. %1$d free, %2$d manual, %3$d unavailable -->
+    <string name="data_quality_charging_breakdown">%1$d gratuitas · %2$d ajustes manuales · %3$d no disponibles</string>
+    <!-- Count of charge sessions with no applicable local rate. %1$d is the count -->
+    <string name="charging_reason_count_missing_rate">%1$d sin tarifa aplicable</string>
+    <!-- Count of charge sessions missing reliable reported energy. %1$d is the count -->
+    <string name="charging_reason_count_missing_energy">%1$d con energía no fiable</string>
+
+    <!-- Section header for battery capacity data quality -->
+    <string name="data_quality_battery_title">Batería</string>
+    <!-- Accepted vs excluded capacity samples. %1$d accepted, %2$d excluded -->
+    <string name="data_quality_battery_samples">%1$d aceptadas · %2$d excluidas</string>
+    <string name="data_quality_battery_baseline_available">Referencia observada disponible</string>
+    <string name="data_quality_battery_baseline_unavailable">La referencia observada necesita más muestras aceptadas</string>
+    <string name="data_quality_battery_efficiency_available">Eficiencia de carga disponible</string>
+    <string name="data_quality_battery_efficiency_unavailable">Eficiencia de carga no disponible</string>
+    <string name="data_quality_battery_rated_range_history">Tendencia histórica de autonomía nominal no disponible: las muestras no se conservan localmente.</string>
+
+    <!-- Section header for Real-World Range data quality -->
+    <string name="data_quality_range_title">Autonomía</string>
+    <!-- The efficiency window used for the current range estimate. %1$s is the window label, e.g. "50 mi" -->
+    <string name="data_quality_range_window">Intervalo: %1$s</string>
+    <string name="range_evidence_battery">Datos de batería</string>
+    <string name="range_evidence_driving">Datos de conducción</string>
+    <string name="range_evidence_overall">General</string>
+    <string name="range_evidence_unavailable">No disponible</string>
+
+    <!-- Section header for the always-unavailable limitations explained once on the Data Quality screen -->
+    <string name="data_quality_limitations_title">Limitaciones conocidas</string>
+    <string name="data_quality_limitations_rated_range">La tendencia histórica de autonomía nominal y una Autonomía Estimada Tesla ausente nunca se sustituyen: permanecen no disponibles.</string>
+    <string name="data_quality_limitations_temperature">La temperatura de la batería no está en el contrato actual del backend y queda pendiente.</string>
+    <string name="data_quality_limitations_no_backfill">TesMano nunca descarga en bloque Detalles de Trayecto o Carga para completar la cobertura.</string>
+
+    <!-- Shared provenance vocabulary: MEASURED -->
+    <string name="quality_semantic_measured">Medido</string>
+    <!-- Shared provenance vocabulary: DERIVED -->
+    <string name="quality_semantic_derived">Derivado</string>
+    <!-- Shared provenance vocabulary: ESTIMATED -->
+    <string name="quality_semantic_estimated">Estimado</string>
+    <string name="quality_availability_available">Disponible</string>
+    <string name="quality_availability_partial">Parcial</string>
+    <string name="quality_availability_unavailable">No disponible</string>
+    <string name="quality_confidence_low">Confianza baja</string>
+    <string name="quality_confidence_medium">Confianza media</string>
+    <string name="quality_confidence_high">Confianza alta</string>
+
+    <!-- Structured reason explanations shown wherever a metric is partial or unavailable -->
+    <string name="quality_reason_insufficient_history">Aún no hay suficiente historial local.</string>
+    <string name="quality_reason_missing_endpoints">Los puntos del trayecto aún no están guardados localmente.</string>
+    <string name="quality_reason_missing_rate">Ninguna tarifa de carga se aplica a este lugar.</string>
+    <string name="quality_reason_missing_energy">No se reportó energía fiable para esta sesión.</string>
+    <string name="quality_reason_incoherent_energy">La energía de red y de batería reportadas no coinciden.</string>
+    <string name="quality_reason_insufficient_soc_span">No hay suficientes sesiones de carga con un rango de nivel de batería suficientemente amplio.</string>
+    <string name="quality_reason_missing_capacity_estimate">Primero se necesita una estimación de capacidad útil.</string>
+    <string name="quality_reason_insufficient_drive_coverage">No hay suficientes datos de conducción recientes para este intervalo.</string>
+    <string name="quality_reason_source_not_retained">Este valor no se conserva en los resúmenes locales.</string>
+    <string name="quality_reason_source_missing_or_zero">El vehículo o el backend no ha reportado este valor.</string>
+    <string name="quality_reason_mixed_currency">Las sesiones usan monedas distintas, así que los totales no se combinan.</string>
+    <string name="quality_reason_detail_not_cached">Este detalle de trayecto o carga aún no se ha abierto.</string>
+    <string name="quality_reason_no_matching_smart_place">Ningún Lugar Inteligente coincide con esta ubicación.</string>
+    <string name="quality_reason_no_valid_samples">Aún no hay muestras fiables disponibles.</string>
+
+    <!-- Short lowercase labels for battery capacity sample exclusion reasons, shown as "2 small SOC span" -->
+    <string name="battery_exclusion_missing_soc">nivel de batería faltante</string>
+    <string name="battery_exclusion_small_span">rango de nivel de batería reducido</string>
+    <string name="battery_exclusion_missing_energy">energía faltante</string>
+    <string name="battery_exclusion_implausible">implausible</string>
+    <string name="battery_exclusion_outlier">valor atípico</string>
+
+    <!-- Recurring Routes empty states: no known endpoints at all -->
+    <string name="routes_empty_no_endpoints_title">Aún no hay puntos de trayecto conocidos</string>
+    <!-- %1$d known endpoints, %2$d total drives -->
+    <string name="routes_empty_no_endpoints_body">%1$d de %2$d trayectos tienen puntos de inicio y destino conocidos. TesMano aprende los puntos de forma incremental al abrir Detalles de Trayecto: abre algunos trayectos antiguos para empezar.</string>
+    <!-- Recurring Routes empty states: some but not all drives have known endpoints -->
+    <string name="routes_empty_partial_title">Aún no hay suficientes datos de rutas</string>
+    <string name="routes_empty_partial_body">%1$d de %2$d trayectos tienen puntos de inicio y destino conocidos. Las rutas se vuelven detectables a medida que se guardan más puntos: abre Detalles de Trayecto antiguos para enriquecer gradualmente la cobertura.</string>
+    <!-- Recurring Routes empty states: full endpoint coverage but no route repeated three times -->
+    <string name="routes_empty_no_pattern_title">Aún no hay rutas recurrentes</string>
+    <string name="routes_empty_no_pattern_body">La cobertura de puntos está completa (%1$d de %2$d trayectos), pero ninguna ruta se ha repetido todavía al menos tres veces.</string>
+    <!-- Coverage line shown above the recurring routes list. %1$d known endpoints, %2$d total drives -->
+    <string name="routes_coverage_summary">Basado en %1$d de %2$d trayectos con puntos conocidos</string>
+
+    <!-- Compact route-coverage affordance shown in Activity, near tag/route filtering. %1$d known, %2$d total -->
+    <string name="activity_route_coverage">Rutas recurrentes basadas en %1$d de %2$d trayectos con puntos conocidos</string>
 </resources>

@@ -28,6 +28,7 @@ import com.matedroid.ui.screens.charges.ChargingAnalyticsScreen
 import com.matedroid.ui.screens.charges.CompareChargesScreen
 import com.matedroid.ui.screens.charges.CurrentChargeScreen
 import com.matedroid.ui.screens.dashboard.DashboardScreen
+import com.matedroid.ui.screens.dataquality.DataQualityScreen
 import com.matedroid.ui.screens.demo.PalettePreviewScreen
 import com.matedroid.ui.screens.drives.CompareDrivesScreen
 import com.matedroid.ui.screens.drives.DriveDetailScreen
@@ -63,6 +64,9 @@ sealed interface Screen {
 
     @Serializable
     data object SmartPlaces : Screen
+
+    @Serializable
+    data object DataQuality : Screen
 
     @Serializable
     data object Dashboard : Screen
@@ -228,12 +232,19 @@ fun NavGraph(
                 },
                 onNavigateToSmartPlaces = {
                     navController.navigate(Screen.SmartPlaces)
+                },
+                onNavigateToDataQuality = {
+                    navController.navigate(Screen.DataQuality)
                 }
             )
         }
 
         composable<Screen.SmartPlaces> {
             SmartPlacesScreen(onNavigateBack = { navController.popBackStack() })
+        }
+
+        composable<Screen.DataQuality> {
+            DataQualityScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         composable<Screen.Dashboard> {
