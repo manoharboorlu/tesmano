@@ -1627,4 +1627,27 @@
     <string name="charging_context_personal_avg">Persönlicher Durchschnitt</string>
     <string name="charging_context_better">%1$s besser als der letzte Durchschnitt</string>
     <string name="charging_context_worse">%1$s schlechter als der letzte Durchschnitt</string>
+
+    <!-- Phase 10: Unfolded Home cockpit -->
+    <string name="home_real_world_range_title">Reale Reichweite</string>
+    <string name="home_range_to_ten_percent">%1$s bis 10 %%</string>
+    <string name="home_range_recent_window">Letzte %1$s</string>
+    <string name="home_range_unavailable">Noch nicht genug Daten</string>
+    <string name="home_today_title">Heute</string>
+    <string name="home_today_miles_driven_label">Gefahrene Strecke</string>
+    <string name="home_today_drive_energy_label">Fahrenergie</string>
+    <string name="home_today_charging_label">Laden</string>
+    <string name="home_today_no_activity">Heute noch keine Aktivität</string>
+    <string name="home_efficiency_title">Effizienz</string>
+    <string name="home_efficiency_window">30 Tage</string>
+    <string name="home_efficiency_vs_baseline">vs. Referenzwert</string>
+    <string name="home_efficiency_unavailable">Noch nicht genug Fahrten</string>
+    <string name="home_battery_title">Batterie</string>
+    <string name="home_battery_unavailable">Noch nicht genug Ladevorgänge</string>
+    <string name="home_last_charge_title">Letzte Ladung</string>
+    <string name="home_last_charge_free">Kostenlos</string>
+    <string name="home_last_charge_unavailable">Noch keine Ladevorgänge</string>
+    <string name="home_last_drive_title">Letzte Fahrt</string>
+    <string name="home_last_drive_unavailable">Noch keine Fahrten aufgezeichnet</string>
+    <string name="home_last_drive_map_unavailable">Karte nicht verfügbar — Standort noch nicht zwischengespeichert</string>
 </resources>

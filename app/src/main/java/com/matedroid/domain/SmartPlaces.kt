@@ -112,12 +112,16 @@ class SmartPlacesRepository @Inject constructor(
         )
     }
 
-    suspend fun contextForDrive(carId: Int, driveId: Int): DrivePlaceContext {
-        val endpoint = dao.endpointForDrive(driveId) ?: aggregateDao
+    /** The best available start/end coordinates for a drive — cached endpoint, else the detail aggregate's. Never fetches. */
+    suspend fun endpointForDrive(carId: Int, driveId: Int): DriveEndpointCache? =
+        dao.endpointForDrive(driveId) ?: aggregateDao
             .getDriveAggregate(carId, driveId)
             ?.let {
                 DriveEndpointCache(it.driveId, it.carId, it.startLatitude, it.startLongitude, it.endLatitude, it.endLongitude, it.computedAt)
             }
+
+    suspend fun contextForDrive(carId: Int, driveId: Int): DrivePlaceContext {
+        val endpoint = endpointForDrive(carId, driveId)
         val places = dao.activePlaces()
         val start = endpoint?.let { SmartPlaceMatcher.match(it.startLatitude?.let { lat -> it.startLongitude?.let { lon -> GeoPoint(lat, lon) } }, places) }
         val end = endpoint?.let { SmartPlaceMatcher.match(it.endLatitude?.let { lat -> it.endLongitude?.let { lon -> GeoPoint(lat, lon) } }, places) }

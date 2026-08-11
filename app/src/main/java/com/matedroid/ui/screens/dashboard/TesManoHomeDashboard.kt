@@ -24,6 +24,8 @@ import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.ElectricBolt
 import androidx.compose.material.icons.filled.Route
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -32,28 +34,54 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.matedroid.R
 import com.matedroid.data.api.models.CarExterior
 import com.matedroid.data.api.models.CarData
 import com.matedroid.data.api.models.CarStatus
 import com.matedroid.data.api.models.Units
 import com.matedroid.data.local.CarImageOverride
+import com.matedroid.data.local.entity.ChargeSummary
+import com.matedroid.data.local.entity.DriveEndpointCache
+import com.matedroid.data.local.entity.DriveSummary
+import com.matedroid.domain.BatteryConfidence
+import com.matedroid.domain.ChargeCostPresentation
+import com.matedroid.domain.RealWorldRangeCalculator
+import com.matedroid.domain.efficiencyOrNull
 import com.matedroid.domain.model.CarImageResolver
 import com.matedroid.domain.model.Trip
 import com.matedroid.domain.model.UnitFormatter
 import com.matedroid.ui.adaptive.LocalAdaptiveLayoutInfo
+import com.matedroid.ui.components.addRouteEndpointMarker
+import com.matedroid.ui.components.applyTesManoDarkMapTreatment
 import com.matedroid.ui.theme.PerformanceRed
 import com.matedroid.ui.theme.ChargingGreen
+import com.matedroid.ui.theme.StatusSuccess
 import com.matedroid.ui.theme.TesManoSpacing
 import com.matedroid.ui.screens.trips.displayName
+import com.matedroid.util.formatDurationCompact
+import com.matedroid.util.parseInstantAware
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory
+import org.osmdroid.util.BoundingBox
+import org.osmdroid.util.GeoPoint
+import org.osmdroid.views.MapView
 import java.time.Duration
 import java.time.Instant
 import java.time.OffsetDateTime
@@ -65,6 +93,7 @@ import java.time.OffsetDateTime
  */
 @Composable
 internal fun TesManoHomeDashboard(
+    carId: Int,
     status: CarStatus,
     units: Units?,
     carName: String?,
@@ -80,7 +109,9 @@ internal fun TesManoHomeDashboard(
     onNavigateToCharges: () -> Unit,
     onNavigateToDrives: () -> Unit,
     onNavigateToTrips: () -> Unit,
-    onNavigateToMileage: () -> Unit
+    onNavigateToMileage: () -> Unit,
+    onNavigateToDriveDetail: (Int) -> Unit = {},
+    onNavigateToChargeDetail: (Int) -> Unit = {}
 ) {
     val adaptive = LocalAdaptiveLayoutInfo.current
     val scrollState = rememberScrollState()
@@ -101,42 +132,50 @@ internal fun TesManoHomeDashboard(
         }
 
         if (adaptive.supportsTwoPane) {
+            val cockpitViewModel: HomeCockpitViewModel = hiltViewModel()
+            LaunchedEffect(carId) { cockpitViewModel.start(carId) }
+            val cockpit by cockpitViewModel.uiState.collectAsStateWithLifecycle()
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(TesManoSpacing.medium),
                 verticalAlignment = Alignment.Top
             ) {
-                VehicleHero(
-                    status = status,
-                    units = units,
-                    carName = carName,
-                    carModel = carModel,
-                    carTrimBadging = carTrimBadging,
-                    carExterior = carExterior,
-                    imageOverride = imageOverride,
-                    expanded = true,
-                    onNavigateToBattery = onNavigateToBattery,
-                    modifier = Modifier.weight(1.08f)
-                )
                 Column(
-                    modifier = Modifier.weight(0.92f),
+                    modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.spacedBy(sectionSpacing)
                 ) {
-                    RecentActivity(
-                        latestTrip = latestTrip,
-                        units = units,
-                        totalDrives = totalDrives,
-                        totalCharges = totalCharges,
-                        onNavigateToTrips = onNavigateToTrips,
-                        onNavigateToDrives = onNavigateToDrives,
-                        onNavigateToCharges = onNavigateToCharges
-                    )
-                    QuickInsights(
+                    VehicleHero(
                         status = status,
                         units = units,
-                        latestTrip = latestTrip,
-                        onNavigateToMileage = onNavigateToMileage,
+                        carName = carName,
+                        carModel = carModel,
+                        carTrimBadging = carTrimBadging,
+                        carExterior = carExterior,
+                        imageOverride = imageOverride,
+                        expanded = false,
                         onNavigateToBattery = onNavigateToBattery
+                    )
+                    LastDriveCard(
+                        drive = cockpit.lastDrive,
+                        endpoint = cockpit.lastDriveEndpoint,
+                        units = cockpit.units ?: units,
+                        onClick = { cockpit.lastDrive?.let { onNavigateToDriveDetail(it.driveId) } }
+                    )
+                }
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(sectionSpacing)
+                ) {
+                    RealWorldRangeCard(cockpit, status, onClick = onNavigateToBattery)
+                    TodayCard(cockpit)
+                    EfficiencyCard(cockpit)
+                    BatteryEstimateCard(cockpit, onClick = onNavigateToBattery)
+                    LastChargeCard(
+                        charge = cockpit.lastCharge,
+                        cost = cockpit.lastChargeCost,
+                        units = cockpit.units ?: units,
+                        onClick = { cockpit.lastCharge?.let { onNavigateToChargeDetail(it.chargeId) } }
                     )
                 }
             }
@@ -384,12 +423,260 @@ private fun QuickInsights(
     }
 }
 
+// ---- Unfolded-only cockpit cards (Phase 10): reuse existing calculators/repositories only ----
+
 @Composable
-private fun HomeSection(title: String, content: @Composable () -> Unit) {
+private fun RealWorldRangeCard(cockpit: HomeCockpitUiState, status: CarStatus, onClick: () -> Unit) {
+    val range = remember(cockpit.rangeEfficiency, cockpit.capacityKwh, cockpit.capacityConfidence, status.batteryLevel) {
+        cockpit.rangeEfficiency?.let { eff ->
+            RealWorldRangeCalculator.range(cockpit.capacityKwh, status.batteryLevel, eff, cockpit.capacityConfidence)
+        }
+    }
+    HomeSection(title = stringResource(R.string.home_real_world_range_title), onClick = onClick) {
+        val toTen = range?.toTenMiles
+        if (toTen == null) {
+            Text(stringResource(R.string.home_range_unavailable), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@HomeSection
+        }
+        Text(
+            stringResource(R.string.home_range_to_ten_percent, UnitFormatter.formatDistance(toTen, cockpit.units, 0)),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.SemiBold
+        )
+        val eff = cockpit.rangeEfficiency
+        if (eff?.whPerMile != null) {
+            Text(
+                "${UnitFormatter.formatEfficiency(eff.whPerMile, cockpit.units, 0)} · ${stringResource(R.string.home_range_recent_window, eff.window.label)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun TodayCard(cockpit: HomeCockpitUiState) {
+    HomeSection(title = stringResource(R.string.home_today_title)) {
+        val today = cockpit.today
+        if (today == null || (today.driveCount == 0 && today.chargeSessionCount == 0)) {
+            Text(stringResource(R.string.home_today_no_activity), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@HomeSection
+        }
+        if (today.driveCount > 0) {
+            InsightRow(
+                icon = Icons.Filled.Route,
+                label = stringResource(R.string.home_today_miles_driven_label),
+                value = UnitFormatter.formatDistance(today.milesDriven, cockpit.units, 0)
+            )
+            InsightRow(
+                icon = Icons.Filled.Speed,
+                label = stringResource(R.string.home_today_drive_energy_label),
+                value = UnitFormatter.formatEnergy(today.driveEnergyKwh)
+            )
+        }
+        if (today.chargeSessionCount > 0) {
+            val energyText = today.chargeEnergyKwh?.let { "+${UnitFormatter.formatEnergy(it)}" }
+            val costText = when {
+                cockpit.todayChargeIsFree -> stringResource(R.string.home_last_charge_free)
+                cockpit.todayChargeCostMinorUnits != null && cockpit.todayChargeCostCurrency != null ->
+                    "${cockpit.todayChargeCostCurrency} %.2f".format(cockpit.todayChargeCostMinorUnits / 100.0)
+                else -> null
+            }
+            InsightRow(
+                icon = Icons.Filled.ElectricBolt,
+                label = stringResource(R.string.home_today_charging_label),
+                value = listOfNotNull(energyText, costText).joinToString(" · "),
+                iconTint = ChargingGreen
+            )
+        }
+    }
+}
+
+@Composable
+private fun EfficiencyCard(cockpit: HomeCockpitUiState) {
+    HomeSection(title = stringResource(R.string.home_efficiency_title)) {
+        val periodEff = cockpit.efficiencyPeriodSummary?.weightedEfficiency
+        if (periodEff == null) {
+            Text(stringResource(R.string.home_efficiency_unavailable), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@HomeSection
+        }
+        Text(stringResource(R.string.home_efficiency_window), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(UnitFormatter.formatEfficiency(periodEff, cockpit.units, 0), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+        cockpit.efficiencyComparison?.let { comparison ->
+            Spacer(Modifier.height(4.dp))
+            if (comparison.isEffectivelyBaseline) {
+                Text(stringResource(R.string.efficiency_matches_baseline), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            } else {
+                val better = comparison.percentBetter > 0
+                val pct = "%.1f%%".format(kotlin.math.abs(comparison.percentBetter))
+                Text(
+                    "${if (better) "+" else "-"}$pct ${stringResource(R.string.home_efficiency_vs_baseline)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (better) StatusSuccess else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BatteryEstimateCard(cockpit: HomeCockpitUiState, onClick: () -> Unit) {
+    HomeSection(title = stringResource(R.string.home_battery_title), onClick = onClick) {
+        val kwh = cockpit.capacityKwh
+        if (kwh == null) {
+            Text(stringResource(R.string.home_battery_unavailable), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@HomeSection
+        }
+        Text("%.1f kWh".format(kwh), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold)
+        val confidenceRes = when (cockpit.capacityConfidence) {
+            BatteryConfidence.HIGH -> R.string.quality_confidence_high
+            BatteryConfidence.MEDIUM -> R.string.quality_confidence_medium
+            BatteryConfidence.LOW -> R.string.quality_confidence_low
+            null -> null
+        }
+        confidenceRes?.let {
+            Text(stringResource(it).uppercase(), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        cockpit.capacityChangePercent?.let { change ->
+            Spacer(Modifier.height(2.dp))
+            val sign = if (change >= 0) "+" else ""
+            Text(
+                "$sign%.1f%%".format(change) + " " + stringResource(R.string.home_efficiency_vs_baseline),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+private fun LastChargeCard(
+    charge: ChargeSummary?,
+    cost: ChargeCostPresentation?,
+    units: Units?,
+    onClick: () -> Unit
+) {
+    HomeSection(title = stringResource(R.string.home_last_charge_title), onClick = if (charge != null) onClick else null) {
+        if (charge == null) {
+            Text(stringResource(R.string.home_last_charge_unavailable), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@HomeSection
+        }
+        val placeName = (cost?.place?.name ?: charge.address.takeIf { it.isNotBlank() }) ?: stringResource(R.string.unknown)
+        Text(placeName, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(4.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("+${UnitFormatter.formatEnergy(charge.energyAdded)}", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = ChargingGreen)
+            val freeText = stringResource(R.string.home_last_charge_free)
+            val costText = when {
+                cost?.isFree == true -> freeText
+                cost?.costMinorUnits != null -> "${cost.currencyCode} %.2f".format(cost.costMinorUnits / 100.0)
+                else -> stringResource(R.string.unknown)
+            }
+            Text(costText, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+    }
+}
+
+@Composable
+private fun LastDriveCard(
+    drive: DriveSummary?,
+    endpoint: DriveEndpointCache?,
+    units: Units?,
+    onClick: () -> Unit
+) {
+    HomeSection(title = stringResource(R.string.home_last_drive_title), onClick = if (drive != null) onClick else null) {
+        if (drive == null) {
+            Text(stringResource(R.string.home_last_drive_unavailable), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            return@HomeSection
+        }
+        Text(
+            "${drive.startAddress} → ${drive.endAddress}",
+            style = MaterialTheme.typography.bodyMedium,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+        val efficiency = drive.efficiencyOrNull()
+        val detailParts = listOfNotNull(
+            UnitFormatter.formatDistance(drive.distance, units, 0),
+            formatDurationCompact(drive.durationMin),
+            efficiency?.let { UnitFormatter.formatEfficiency(it, units, 0) }
+        )
+        Text(
+            detailParts.joinToString(" · "),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(TesManoSpacing.small))
+        LastDriveMap(endpoint, onClick)
+    }
+}
+
+@Composable
+private fun LastDriveMap(endpoint: DriveEndpointCache?, onClick: () -> Unit) {
+    val startPoint = endpoint?.startLatitude?.let { lat -> endpoint.startLongitude?.let { lon -> GeoPoint(lat, lon) } }
+    val endPoint = endpoint?.endLatitude?.let { lat -> endpoint.endLongitude?.let { lon -> GeoPoint(lat, lon) } }
+    if (startPoint == null && endPoint == null) {
+        Box(Modifier.fillMaxWidth().height(120.dp), contentAlignment = Alignment.Center) {
+            Text(
+                stringResource(R.string.home_last_drive_map_unavailable),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
+        }
+        return
+    }
+    val accentArgb = PerformanceRed.toArgb()
+    val startLabel = stringResource(R.string.start)
+    val endLabel = stringResource(R.string.end)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(180.dp)
+            .clip(RoundedCornerShape(12.dp))
+    ) {
+        AndroidView(
+            factory = { ctx ->
+                MapView(ctx).apply {
+                    setTileSource(TileSourceFactory.MAPNIK)
+                    setMultiTouchControls(false)
+                    setBuiltInZoomControls(false)
+                    isClickable = false
+                    applyTesManoDarkMapTreatment()
+                    val points = listOfNotNull(startPoint, endPoint)
+                    startPoint?.let { addRouteEndpointMarker(it, "S", startLabel, accentArgb) }
+                    endPoint?.let { addRouteEndpointMarker(it, "E", endLabel, 0xFFE6E9ED.toInt()) }
+                    if (points.size == 2) {
+                        val north = points.maxOf { it.latitude }
+                        val south = points.minOf { it.latitude }
+                        val east = points.maxOf { it.longitude }
+                        val west = points.minOf { it.longitude }
+                        val latPad = ((north - south).takeIf { it > 0.0 } ?: 0.01) * 0.4
+                        val lonPad = ((east - west).takeIf { it > 0.0 } ?: 0.01) * 0.4
+                        post {
+                            zoomToBoundingBox(BoundingBox(north + latPad, east + lonPad, south - latPad, west - lonPad), false)
+                            invalidate()
+                        }
+                    } else {
+                        controller.setZoom(14.0)
+                        controller.setCenter(points.first())
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+        // The embedded MapView otherwise swallows single taps as its own zoom-control gesture;
+        // this transparent overlay is the sole tap target so "tap the map" reliably opens Drive Detail.
+        Box(Modifier.fillMaxSize().clickable(onClick = onClick))
+    }
+}
+
+@Composable
+private fun HomeSection(title: String, onClick: (() -> Unit)? = null, content: @Composable () -> Unit) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = RoundedCornerShape(16.dp),
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth().let { if (onClick != null) it.clickable(onClick = onClick) else it }
     ) {
         Column(modifier = Modifier.padding(TesManoSpacing.medium)) {
             Text(
@@ -452,12 +739,12 @@ private fun InsightRow(
     label: String,
     value: String,
     iconTint: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.onSurfaceVariant,
-    onClick: () -> Unit
+    onClick: (() -> Unit)? = null
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .let { if (onClick != null) it.clickable(onClick = onClick) else it }
             .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {

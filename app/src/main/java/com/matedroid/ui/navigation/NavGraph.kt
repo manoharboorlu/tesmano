@@ -302,6 +302,12 @@ fun NavGraph(
                 },
                 onNavigateToTrips = { carId, exteriorColor ->
                     navController.navigate(Screen.Trips(carId, exteriorColor))
+                },
+                onNavigateToDriveDetail = { carId, driveId, exteriorColor ->
+                    navController.navigate(Screen.DriveDetail(carId, driveId, exteriorColor))
+                },
+                onNavigateToChargeDetail = { carId, chargeId, exteriorColor ->
+                    navController.navigate(Screen.ChargeDetail(carId, chargeId, exteriorColor))
                 }
             )
         }

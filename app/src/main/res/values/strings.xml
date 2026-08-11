@@ -1674,4 +1674,27 @@
     <string name="charging_context_personal_avg">Personal average</string>
     <string name="charging_context_better">%1$s better than recent average</string>
     <string name="charging_context_worse">%1$s worse than recent average</string>
+
+    <!-- Phase 10: Unfolded Home cockpit -->
+    <string name="home_real_world_range_title">Real-World Range</string>
+    <string name="home_range_to_ten_percent">%1$s to 10%%</string>
+    <string name="home_range_recent_window">Recent %1$s</string>
+    <string name="home_range_unavailable">Not enough data yet</string>
+    <string name="home_today_title">Today</string>
+    <string name="home_today_miles_driven_label">Miles driven</string>
+    <string name="home_today_drive_energy_label">Drive energy</string>
+    <string name="home_today_charging_label">Charging</string>
+    <string name="home_today_no_activity">No activity today yet</string>
+    <string name="home_efficiency_title">Efficiency</string>
+    <string name="home_efficiency_window">30-day</string>
+    <string name="home_efficiency_vs_baseline">vs baseline</string>
+    <string name="home_efficiency_unavailable">Not enough drives yet</string>
+    <string name="home_battery_title">Battery</string>
+    <string name="home_battery_unavailable">Not enough charges yet</string>
+    <string name="home_last_charge_title">Last Charge</string>
+    <string name="home_last_charge_free">Free</string>
+    <string name="home_last_charge_unavailable">No charging sessions yet</string>
+    <string name="home_last_drive_title">Last Drive</string>
+    <string name="home_last_drive_unavailable">No drives recorded yet</string>
+    <string name="home_last_drive_map_unavailable">Map unavailable — location not yet cached</string>
 </resources>

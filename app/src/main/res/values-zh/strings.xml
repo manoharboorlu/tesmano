@@ -1534,4 +1534,27 @@
     <string name="charging_context_personal_avg">个人平均值</string>
     <string name="charging_context_better">比近期平均值高效 %1$s</string>
     <string name="charging_context_worse">比近期平均值低效 %1$s</string>
+
+    <!-- Phase 10: Unfolded Home cockpit -->
+    <string name="home_real_world_range_title">真实续航</string>
+    <string name="home_range_to_ten_percent">还可行驶 %1$s（至 10%%）</string>
+    <string name="home_range_recent_window">最近 %1$s</string>
+    <string name="home_range_unavailable">数据尚不足</string>
+    <string name="home_today_title">今日</string>
+    <string name="home_today_miles_driven_label">行驶里程</string>
+    <string name="home_today_drive_energy_label">行驶耗电</string>
+    <string name="home_today_charging_label">充电</string>
+    <string name="home_today_no_activity">今日暂无活动</string>
+    <string name="home_efficiency_title">能效</string>
+    <string name="home_efficiency_window">30 天</string>
+    <string name="home_efficiency_vs_baseline">相对基准</string>
+    <string name="home_efficiency_unavailable">行程数据尚不足</string>
+    <string name="home_battery_title">电池</string>
+    <string name="home_battery_unavailable">充电数据尚不足</string>
+    <string name="home_last_charge_title">上次充电</string>
+    <string name="home_last_charge_free">免费</string>
+    <string name="home_last_charge_unavailable">暂无充电记录</string>
+    <string name="home_last_drive_title">上次行程</string>
+    <string name="home_last_drive_unavailable">暂无行程记录</string>
+    <string name="home_last_drive_map_unavailable">地图不可用 — 位置尚未缓存</string>
 </resources>

@@ -199,6 +199,8 @@ fun DashboardScreen(
     onNavigateToWhereWasI: (carId: Int, timestamp: String, exteriorColor: String?) -> Unit = { _, _, _ -> },
     onNavigateToSentryHistory: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
     onNavigateToTrips: (carId: Int, exteriorColor: String?) -> Unit = { _, _ -> },
+    onNavigateToDriveDetail: (carId: Int, driveId: Int, exteriorColor: String?) -> Unit = { _, _, _ -> },
+    onNavigateToChargeDetail: (carId: Int, chargeId: Int, exteriorColor: String?) -> Unit = { _, _, _ -> },
     viewModel: DashboardViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -320,6 +322,16 @@ fun DashboardScreen(
                         onNavigateToTrips = {
                             uiState.selectedCarId?.let { carId ->
                                 onNavigateToTrips(carId, uiState.selectedCarExterior?.exteriorColor)
+                            }
+                        },
+                        onNavigateToDriveDetail = { driveId ->
+                            uiState.selectedCarId?.let { carId ->
+                                onNavigateToDriveDetail(carId, driveId, uiState.selectedCarExterior?.exteriorColor)
+                            }
+                        },
+                        onNavigateToChargeDetail = { chargeId ->
+                            uiState.selectedCarId?.let { carId ->
+                                onNavigateToChargeDetail(carId, chargeId, uiState.selectedCarExterior?.exteriorColor)
                             }
                         }
                     )
@@ -873,9 +885,12 @@ private fun DashboardContent(
     onNavigateToCurrentCharge: () -> Unit = {},
     onSaveCarImageOverride: (CarImageOverride?) -> Unit = {},
     onNavigateToSentryHistory: () -> Unit = {},
-    onNavigateToTrips: () -> Unit = {}
+    onNavigateToTrips: () -> Unit = {},
+    onNavigateToDriveDetail: (Int) -> Unit = {},
+    onNavigateToChargeDetail: (Int) -> Unit = {}
 ) {
     TesManoHomeDashboard(
+        carId = selectedCarId ?: 0,
         status = status,
         units = units,
         carName = status.displayName,
@@ -891,7 +906,9 @@ private fun DashboardContent(
         onNavigateToCharges = onNavigateToCharges,
         onNavigateToDrives = onNavigateToDrives,
         onNavigateToTrips = onNavigateToTrips,
-        onNavigateToMileage = onNavigateToMileage
+        onNavigateToMileage = onNavigateToMileage,
+        onNavigateToDriveDetail = onNavigateToDriveDetail,
+        onNavigateToChargeDetail = onNavigateToChargeDetail
     )
 }
 

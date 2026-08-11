@@ -61,10 +61,11 @@ data class EfficiencySummary(
     val validDriveCount: Int
 )
 
-private fun DriveSummary.hasValidEfficiencyInputs(): Boolean =
+internal fun DriveSummary.hasValidEfficiencyInputs(): Boolean =
     energyConsumed != null && energyConsumed > 0.0 && distance > 0.0
 
-private fun DriveSummary.efficiencyOrNull(): Double? =
+/** Wh/unit for a single drive — used for ranking and for the Home cockpit's Last Drive card. */
+fun DriveSummary.efficiencyOrNull(): Double? =
     if (hasValidEfficiencyInputs()) energyConsumed!! * 1000.0 / distance else null
 
 fun computeEfficiencySummary(drives: List<DriveSummary>): EfficiencySummary {
